@@ -19,6 +19,8 @@
       --header-bg: #231208;
       --header-text: #f5e6c8;
       --controls-bg: #f0e9dd;
+      --font-size-tib: 15px;
+      --font-size-en: 12px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -269,20 +271,86 @@
 
     .node-tib {
       font-family: 'Noto Sans Tibetan', serif;
-      font-size: 15px;
+      font-size: var(--font-size-tib);
       line-height: 2.0;
       color: var(--text);
       word-break: break-word;
     }
 
     .node-en {
-      font-size: 12px;
+      font-size: var(--font-size-en);
       color: var(--text-muted);
       font-style: italic;
       display: block;
       margin-top: -3px;
       margin-left: 0;
       word-break: break-word;
+    }
+
+    /* ── Language visibility ────────────────────── */
+    .hide-tib .node-tib { display: none; }
+    .hide-en .node-en { display: none; }
+
+    /* ── Language toggle buttons ────────────────── */
+    .lang-toggles {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .lang-btn {
+      padding: 4px 9px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: white;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--text-muted);
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s, border-color 0.12s, opacity 0.12s;
+      opacity: 0.5;
+      font-family: inherit;
+    }
+
+    .lang-btn.tib-btn {
+      font-family: 'Noto Sans Tibetan', serif;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 3px 9px;
+    }
+
+    .lang-btn.active {
+      background: var(--controls-bg);
+      border-color: #c0a880;
+      color: var(--text);
+      opacity: 1;
+    }
+
+    .lang-btn:hover { opacity: 1; }
+
+    /* ── Text size controls ─────────────────────── */
+    .size-controls {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    .size-btn {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      font-size: 17px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+    }
+
+    .size-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
     }
 
     /* ── Children container ─────────────────────────── */
@@ -428,6 +496,16 @@
   <div class="divider"></div>
   <button class="btn" id="btnExpandAll">Expand All</button>
   <button class="btn" id="btnCollapseAll">Collapse All</button>
+  <div class="divider"></div>
+  <div class="lang-toggles">
+    <button class="lang-btn tib-btn active" id="btnTib" title="Toggle Tibetan">བོད་ཡིག</button>
+    <button class="lang-btn active" id="btnEng" title="Toggle English">ENG</button>
+  </div>
+  <div class="divider"></div>
+  <div class="size-controls">
+    <button class="btn size-btn" id="btnSizeDown" title="Decrease text size">−</button>
+    <button class="btn size-btn" id="btnSizeUp" title="Increase text size">+</button>
+  </div>
 </div>
 
 <div class="breadcrumb-bar empty" id="breadcrumb">
@@ -781,7 +859,10 @@ buildIndex(DATA.nodes, null, 0);
 const state = {
   expanded: new Set(),
   selected: null,
-  query: ''
+  query: '',
+  showTib: true,
+  showEn: true,
+  textSize: 0   // steps; each step ±2px; range -2..+4
 };
 
 // Default: expand depth 0 and 1
@@ -1096,6 +1177,42 @@ function collapseAll() {
 }
 
 // ═══════════════════════════════════════════════
+//  LANGUAGE & TEXT SIZE
+// ═══════════════════════════════════════════════
+function applyLangFilter() {
+  document.documentElement.classList.toggle('hide-tib', !state.showTib);
+  document.documentElement.classList.toggle('hide-en',  !state.showEn);
+  document.getElementById('btnTib').classList.toggle('active', state.showTib);
+  document.getElementById('btnEng').classList.toggle('active', state.showEn);
+}
+
+function applyTextSize() {
+  const root = document.documentElement;
+  root.style.setProperty('--font-size-tib', (15 + state.textSize * 2) + 'px');
+  root.style.setProperty('--font-size-en',  (12 + state.textSize * 2) + 'px');
+  document.getElementById('btnSizeDown').disabled = state.textSize <= -2;
+  document.getElementById('btnSizeUp').disabled   = state.textSize >= 4;
+}
+
+document.getElementById('btnTib').addEventListener('click', () => {
+  state.showTib = !state.showTib;
+  applyLangFilter();
+});
+
+document.getElementById('btnEng').addEventListener('click', () => {
+  state.showEn = !state.showEn;
+  applyLangFilter();
+});
+
+document.getElementById('btnSizeDown').addEventListener('click', () => {
+  if (state.textSize > -2) { state.textSize--; applyTextSize(); }
+});
+
+document.getElementById('btnSizeUp').addEventListener('click', () => {
+  if (state.textSize < 4) { state.textSize++; applyTextSize(); }
+});
+
+// ═══════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════
 let searchTimer = null;
@@ -1159,6 +1276,8 @@ document.getElementById('introToggle').addEventListener('click', () => {
 // ═══════════════════════════════════════════════
 renderTree();
 updateBreadcrumb();
+applyLangFilter();
+applyTextSize();
 </script>
 </body>
 </html>
