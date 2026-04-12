@@ -184,6 +184,9 @@
       padding: 1px 3px;
       border-radius: 3px;
       transition: background 0.1s;
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
     }
 
     .crumb:hover { background: #fce8cc; }
@@ -194,7 +197,15 @@
       line-height: 1.8;
     }
 
-    .crumb-sep { color: #cfc0a8; margin: 0 1px; }
+    .crumb-en {
+      font-size: 10px;
+      color: #b09070;
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .crumb-sep { color: #cfc0a8; margin: 0 2px; align-self: flex-start; padding-top: 3px; }
 
     .crumb-id {
       font-size: 10px;
@@ -289,7 +300,8 @@
 
     /* ── Language visibility ────────────────────── */
     .hide-tib .node-tib { display: none; }
-    .hide-en .node-en { display: none; }
+    .hide-en .node-en,
+    .hide-en .crumb-en { display: none; }
 
     /* ── Language toggle buttons ────────────────── */
     .lang-toggles {
@@ -1155,7 +1167,8 @@ function updateBreadcrumb() {
   bc.innerHTML = path.map((node, i) => {
     const isLast = i === path.length - 1;
     return `<span class="crumb" data-crumb-id="${escHtml(node.id)}" title="${escHtml(node.en)}">
-      <span class="crumb-id">${escHtml(node.id)}</span><span class="crumb-tib">${escHtml(node.tib)}</span>
+      <span class="crumb-top"><span class="crumb-id">${escHtml(node.id)}</span><span class="crumb-tib">${escHtml(node.tib)}</span></span>
+      <span class="crumb-en">${escHtml(node.en)}</span>
     </span>${isLast ? '' : '<span class="crumb-sep">›</span>'}`;
   }).join('');
 
