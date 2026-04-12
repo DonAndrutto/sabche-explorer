@@ -343,12 +343,63 @@
       font-style: normal;
     }
 
+    /* ── Intro section ──────────────────────────────── */
+    .intro-section {
+      max-width: 860px;
+      margin: 0;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      background: #fffdf8;
+    }
+
+    .intro-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    .intro-toggle:hover { text-decoration: underline; }
+
+    .intro-arrow {
+      display: inline-block;
+      font-size: 9px;
+      transition: transform 0.15s;
+    }
+
+    .intro-arrow.open { transform: rotate(90deg); }
+
+    .intro-body {
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    .intro-body.visible { display: block; }
+
+    .intro-body p { margin-bottom: 8px; }
+
+    .intro-body .text-title {
+      font-weight: 600;
+      color: var(--text);
+    }
+
     /* ── Responsive ─────────────────────────────────── */
     @media (max-width: 600px) {
       .app-header { padding: 12px 14px 10px; }
       .controls { padding: 8px 14px; }
       .breadcrumb-bar { padding: 6px 14px; }
       .tree-container { padding: 10px 8px 40px; }
+      .intro-section { padding: 14px; }
       .header-tib { font-size: 17px; }
       .children-wrap { padding-left: 14px; margin-left: 6px; }
     }
@@ -369,7 +420,7 @@
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input class="search-box" id="searchBox" type="text"
-      placeholder="Search Tibetan or English…"
+      placeholder="Search (diacritics optional)…"
       autocomplete="off" spellcheck="false">
     <button class="search-clear" id="searchClear" title="Clear search">✕</button>
   </div>
@@ -381,6 +432,33 @@
 
 <div class="breadcrumb-bar empty" id="breadcrumb">
   Click any node to mark your place
+</div>
+
+<div class="intro-section">
+  <button class="intro-toggle" id="introToggle">
+    <span class="intro-arrow" id="introArrow">▶</span> About this text
+  </button>
+  <div class="intro-body" id="introBody">
+    <p>
+      <span class="text-title">ཡོན་ཏན་མཛོད · Yönten Dzö</span> (<em>Treasury of Precious Qualities</em>)
+      by Jigme Lingpa (1730–1798) is a comprehensive overview of the entire Buddhist path
+      according to the Nyingma tradition. This explorer covers the
+      <strong>Wisdom Chapter</strong> (ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ), the exposition of Prajñāpāramitā —
+      the sixth and final of the Six Perfections (ཕར་ཕྱིན་དྲུག).
+    </p>
+    <p>
+      The chapter unfolds in three major divisions corresponding to the three types of Prajñā:
+      <strong>hearing</strong> (ཐོས་པ), <strong>reflection</strong> (བསམ་པ), and <strong>meditation</strong> (སྒོམ་པ).
+      The hearing section is the most extensive, covering the hermeneutical tools for interpreting scripture,
+      the objects of knowledge, and a detailed survey of the four philosophical schools
+      culminating in the Prāsaṅgika Madhyamaka view.
+    </p>
+    <p>
+      This <em>sa bche</em> (outline) follows the structure of the root text and its auto-commentary.
+      Use the search bar to find topics across Tibetan and English — diacritics are optional
+      (e.g., "prajna" will find "Prajñā"). Click any node to see its position in the breadcrumb trail.
+    </p>
+  </div>
 </div>
 
 <div class="tree-container" id="treeContainer"></div>
@@ -727,16 +805,22 @@ function depthColor(d) {
 // ═══════════════════════════════════════════════
 //  SEARCH HELPERS
 // ═══════════════════════════════════════════════
+
+// Strip diacritics so "prajna" matches "Prajñā", etc.
+function stripDiacritics(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function getMatchingIds(q) {
   if (!q) return null;
-  const lq = q.toLowerCase();
+  const lq = stripDiacritics(q.toLowerCase());
   const matches = new Set();
   const visible = new Set(); // matches + all their ancestors
 
   Object.values(nodeIndex).forEach(({ node }) => {
     if (
-      node.tib.toLowerCase().includes(lq) ||
-      node.en.toLowerCase().includes(lq) ||
+      stripDiacritics(node.tib.toLowerCase()).includes(lq) ||
+      stripDiacritics(node.en.toLowerCase()).includes(lq) ||
       node.id.toLowerCase().includes(lq)
     ) {
       matches.add(node.id);
@@ -758,9 +842,65 @@ function getMatchingIds(q) {
 
 function highlight(text, q) {
   if (!q) return escHtml(text);
-  const escaped = escHtml(text);
-  const escapedQ = escHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return escaped.replace(new RegExp(escapedQ, 'gi'), m => `<mark>${m}</mark>`);
+  // Find matches in the stripped version, then map positions back to original
+  const strippedText = stripDiacritics(text);
+  const strippedQ = stripDiacritics(q);
+  const escapedQ = strippedQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(escapedQ, 'gi');
+
+  // Build a mapping: stripped index → original index
+  // Each original char may expand to 1+ chars after NFD normalization
+  const nfd = text.normalize('NFD');
+  const origToNfd = []; // origToNfd[i] = start index in NFD string
+  let nfdPos = 0;
+  for (let i = 0; i < text.length; i++) {
+    origToNfd.push(nfdPos);
+    const nfdChar = text[i].normalize('NFD');
+    nfdPos += nfdChar.length;
+  }
+
+  // stripped index → original index mapping
+  // stripped = NFD with combining marks removed
+  const nfdToOrig = new Array(nfd.length);
+  nfdPos = 0;
+  for (let i = 0; i < text.length; i++) {
+    const nfdChar = text[i].normalize('NFD');
+    for (let j = 0; j < nfdChar.length; j++) {
+      nfdToOrig[nfdPos + j] = i;
+    }
+    nfdPos += nfdChar.length;
+  }
+
+  // Map stripped positions back to original
+  let strippedToOrig = [];
+  for (let i = 0; i < nfd.length; i++) {
+    const code = nfd.charCodeAt(i);
+    if (code < 0x0300 || code > 0x036f) { // not a combining mark
+      strippedToOrig.push(nfdToOrig[i]);
+    }
+  }
+
+  // Find all match ranges in original text
+  const ranges = [];
+  let m;
+  while ((m = regex.exec(strippedText)) !== null) {
+    const startOrig = strippedToOrig[m.index];
+    const endOrig = strippedToOrig[m.index + m[0].length - 1] + 1;
+    ranges.push([startOrig, endOrig]);
+  }
+
+  if (ranges.length === 0) return escHtml(text);
+
+  // Build highlighted string
+  let result = '';
+  let last = 0;
+  for (const [s, e] of ranges) {
+    result += escHtml(text.slice(last, s));
+    result += '<mark>' + escHtml(text.slice(s, e)) + '</mark>';
+    last = e;
+  }
+  result += escHtml(text.slice(last));
+  return result;
 }
 
 function escHtml(s) {
@@ -1002,6 +1142,16 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     document.getElementById('searchBox').focus();
   }
+});
+
+// ═══════════════════════════════════════════════
+//  INTRO TOGGLE
+// ═══════════════════════════════════════════════
+document.getElementById('introToggle').addEventListener('click', () => {
+  const body = document.getElementById('introBody');
+  const arrow = document.getElementById('introArrow');
+  const isOpen = body.classList.toggle('visible');
+  arrow.classList.toggle('open', isOpen);
 });
 
 // ═══════════════════════════════════════════════
