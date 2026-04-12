@@ -286,6 +286,7 @@
       line-height: 2.0;
       color: var(--text);
       word-break: break-word;
+      display: block;
     }
 
     .node-en {
@@ -299,9 +300,9 @@
     }
 
     /* ── Language visibility ────────────────────── */
-    .hide-tib .node-tib { display: none; }
-    .hide-en .node-en,
-    .hide-en .crumb-en { display: none; }
+    body.hide-tib .node-tib { display: none !important; }
+    body.hide-en  .node-en  { display: none !important; }
+    body.hide-en  .crumb-en { display: none; }
 
     /* ── Language toggle buttons ────────────────── */
     .lang-toggles {
@@ -510,7 +511,7 @@
   <button class="btn" id="btnCollapseAll">Collapse All</button>
   <div class="divider"></div>
   <div class="lang-toggles">
-    <button class="lang-btn tib-btn active" id="btnTib" title="Toggle Tibetan">བོད་ཡིག</button>
+    <button class="lang-btn active" id="btnTib" title="Toggle Tibetan">TIB</button>
     <button class="lang-btn active" id="btnEng" title="Toggle English">ENG</button>
   </div>
   <div class="divider"></div>
@@ -1068,11 +1069,13 @@ function renderNode(node, depth, searchResult) {
   const content = document.createElement('div');
   content.className = 'node-content';
 
+  const idSpan = document.createElement('span');
+  idSpan.className = 'node-id';
+  idSpan.textContent = node.id;
+
   const tibSpan = document.createElement('span');
   tibSpan.className = 'node-tib';
-  tibSpan.innerHTML =
-    `<span class="node-id">${escHtml(node.id)}</span>` +
-    highlight(node.tib, q);
+  tibSpan.innerHTML = highlight(node.tib, q);
 
   const enSpan = document.createElement('span');
   enSpan.className = 'node-en';
@@ -1081,6 +1084,7 @@ function renderNode(node, depth, searchResult) {
     enSpan.innerHTML += ` <span class="child-count">${node.children.length}</span>`;
   }
 
+  content.appendChild(idSpan);
   content.appendChild(tibSpan);
   content.appendChild(enSpan);
 
@@ -1193,10 +1197,17 @@ function collapseAll() {
 //  LANGUAGE & TEXT SIZE
 // ═══════════════════════════════════════════════
 function applyLangFilter() {
-  document.documentElement.classList.toggle('hide-tib', !state.showTib);
-  document.documentElement.classList.toggle('hide-en',  !state.showEn);
+  document.body.classList.toggle('hide-tib', !state.showTib);
+  document.body.classList.toggle('hide-en',  !state.showEn);
   document.getElementById('btnTib').classList.toggle('active', state.showTib);
   document.getElementById('btnEng').classList.toggle('active', state.showEn);
+}
+
+function flashBtn(id) {
+  const btn = document.getElementById(id);
+  btn.style.transition = 'none';
+  btn.style.background = '#f8d0d0';
+  setTimeout(() => { btn.style.transition = ''; btn.style.background = ''; }, 220);
 }
 
 function applyTextSize() {
@@ -1208,11 +1219,13 @@ function applyTextSize() {
 }
 
 document.getElementById('btnTib').addEventListener('click', () => {
+  if (state.showTib && !state.showEn) { flashBtn('btnTib'); return; }
   state.showTib = !state.showTib;
   applyLangFilter();
 });
 
 document.getElementById('btnEng').addEventListener('click', () => {
+  if (state.showEn && !state.showTib) { flashBtn('btnEng'); return; }
   state.showEn = !state.showEn;
   applyLangFilter();
 });
