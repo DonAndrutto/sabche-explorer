@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sabche Explorer — Wisdom Chapter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tibetan:wght@400;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --surface: #ffffff;
+      --border: #e2d9c8;
+      --text: #1c1a17;
+      --text-muted: #6b5f50;
+      --accent: #8b2c2c;
+      --selected-bg: #fef5e7;
+      --selected-border: #c46a1a;
+      --match-bg: #fffde7;
+      --header-bg: #231208;
+      --header-text: #f5e6c8;
+      --controls-bg: #f0e9dd;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    .app-header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 14px 22px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+
+    .header-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #9a7a5a;
+      margin-bottom: 3px;
+    }
+
+    .header-tib {
+      font-family: 'Noto Sans Tibetan', serif;
+      font-size: 20px;
+      line-height: 2.0;
+      color: var(--header-text);
+      display: block;
+    }
+
+    .header-en {
+      font-size: 12px;
+      color: #c0996a;
+      font-style: italic;
+      display: block;
+      margin-top: -4px;
+    }
+
+    /* ── Controls bar ───────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 22px;
+      background: var(--controls-bg);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 6px 10px 6px 30px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      background: white;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .search-box:focus {
+      border-color: var(--selected-border);
+      box-shadow: 0 0 0 2px rgba(196,106,26,0.18);
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 0;
+      line-height: 1;
+      display: none;
+    }
+
+    .search-clear.visible { display: block; }
+
+    .btn {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text);
+      white-space: nowrap;
+      transition: background 0.1s, border-color 0.1s;
+    }
+
+    .btn:hover {
+      background: var(--controls-bg);
+      border-color: #c0a880;
+    }
+
+    .btn:active { opacity: 0.8; }
+
+    .divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+    .search-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      min-width: 60px;
+    }
+
+    /* ── Breadcrumb ─────────────────────────────────── */
+    .breadcrumb-bar {
+      padding: 6px 22px;
+      background: #fffdf8;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb-bar.empty {
+      color: #b8a890;
+      font-style: italic;
+    }
+
+    .crumb {
+      cursor: pointer;
+      color: #8b4c1a;
+      font-weight: 500;
+      padding: 1px 3px;
+      border-radius: 3px;
+      transition: background 0.1s;
+    }
+
+    .crumb:hover { background: #fce8cc; }
+
+    .crumb-tib {
+      font-family: 'Noto Sans Tibetan', serif;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .crumb-sep { color: #cfc0a8; margin: 0 1px; }
+
+    .crumb-id {
+      font-size: 10px;
+      color: #b09070;
+      font-weight: 600;
+      margin-right: 3px;
+    }
+
+    /* ── Tree container ─────────────────────────────── */
+    .tree-container {
+      padding: 14px 16px 60px;
+      max-width: 860px;
+    }
+
+    /* ── Node ───────────────────────────────────────── */
+    .tree-node { position: relative; }
+
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 2px;
+      padding: 3px 6px 3px 0;
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.1s;
+      margin-bottom: 1px;
+    }
+
+    .node-row:hover { background: rgba(0,0,0,0.04); }
+
+    .node-row.selected {
+      background: var(--selected-bg) !important;
+      border-left-color: var(--selected-border) !important;
+    }
+
+    .node-row.search-match { background: var(--match-bg); }
+
+    .toggle-btn {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #a09080;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 6px;
+      border-radius: 3px;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .toggle-btn:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+
+    .toggle-btn.leaf { cursor: default; color: transparent; pointer-events: none; }
+
+    .toggle-arrow { display: inline-block; transition: transform 0.15s; }
+    .toggle-arrow.open { transform: rotate(90deg); }
+
+    .node-content { flex: 1; min-width: 0; padding: 2px 0; }
+
+    .node-id {
+      font-size: 10px;
+      color: #b89870;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-right: 5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .node-tib {
+      font-family: 'Noto Sans Tibetan', serif;
+      font-size: 15px;
+      line-height: 2.0;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .node-en {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+      display: block;
+      margin-top: -3px;
+      margin-left: 0;
+      word-break: break-word;
+    }
+
+    /* ── Children container ─────────────────────────── */
+    .children-wrap {
+      padding-left: 22px;
+      border-left: 1px dashed #ddd0b8;
+      margin-left: 10px;
+      overflow: hidden;
+    }
+
+    .children-wrap.collapsed { display: none; }
+
+    /* ── Depth left-border colors ───────────────────── */
+    .depth-0 > .node-row { border-left-color: #7c2d2d; }
+    .depth-1 > .node-row { border-left-color: #a04020; }
+    .depth-2 > .node-row { border-left-color: #c46a1a; }
+    .depth-3 > .node-row { border-left-color: #c49a0a; }
+    .depth-4 > .node-row { border-left-color: #7a9020; }
+    .depth-5 > .node-row { border-left-color: #2a7a50; }
+    .depth-6 > .node-row { border-left-color: #1a6888; }
+    .depth-7 > .node-row { border-left-color: #2a4a9a; }
+    .depth-8 > .node-row { border-left-color: #5a2a9a; }
+    .depth-9 > .node-row { border-left-color: #8a1a7a; }
+    .depth-10 > .node-row { border-left-color: #aa1a4a; }
+    .depth-11 > .node-row { border-left-color: #7c2d2d; }
+
+    /* Depth indicator dot */
+    .depth-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 9px;
+      margin-right: 2px;
+      opacity: 0.5;
+    }
+
+    /* ── Search highlight ───────────────────────────── */
+    mark {
+      background: #ffe082;
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* ── Hidden (search mode) ───────────────────────── */
+    .node-hidden { display: none !important; }
+
+    /* ── Node count badge ───────────────────────────── */
+    .child-count {
+      font-size: 10px;
+      color: #b09070;
+      background: #f0e8d8;
+      border-radius: 8px;
+      padding: 0 5px;
+      margin-left: 4px;
+      vertical-align: middle;
+      font-style: normal;
+    }
+
+    /* ── Responsive ─────────────────────────────────── */
+    @media (max-width: 600px) {
+      .app-header { padding: 12px 14px 10px; }
+      .controls { padding: 8px 14px; }
+      .breadcrumb-bar { padding: 6px 14px; }
+      .tree-container { padding: 10px 8px 40px; }
+      .header-tib { font-size: 17px; }
+      .children-wrap { padding-left: 14px; margin-left: 6px; }
+    }
+
+    /* ── Smooth scroll offset ───────────────────────── */
+    .tree-anchor { scroll-margin-top: 140px; }
+  </style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-label">Sa bche Explorer · Yonten Dzo</div>
+  <span class="header-tib">ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ</span>
+  <span class="header-en">Wisdom Chapter — Exposition of Prajñāpāramitā</span>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-box" id="searchBox" type="text"
+      placeholder="Search Tibetan or English…"
+      autocomplete="off" spellcheck="false">
+    <button class="search-clear" id="searchClear" title="Clear search">✕</button>
+  </div>
+  <span class="search-count" id="searchCount"></span>
+  <div class="divider"></div>
+  <button class="btn" id="btnExpandAll">Expand All</button>
+  <button class="btn" id="btnCollapseAll">Collapse All</button>
+</div>
+
+<div class="breadcrumb-bar empty" id="breadcrumb">
+  Click any node to mark your place
+</div>
+
+<div class="tree-container" id="treeContainer"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════
+const DATA = {
+  "title_tib": "ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ",
+  "title_en": "Yonten Dzo Wisdom Chapter — Exposition of Prajñāpāramitā",
+  "nodes": [
+    {
+      "id": "1",
+      "tib": "ཤེས་རབ་གསུམ་གྱི་རང་བཞིན་སྤྱིར་བསྟན་པ",
+      "en": "General presentation of the nature of 3 types of Prajñā",
+      "children": []
+    },
+    {
+      "id": "2",
+      "tib": "ཐོས་བསམ་སྒོམ་པའི་ཤེས་རབ་བྱེ་བྲག་ཏུ་བཤད་པ",
+      "en": "Extensive explanation of 3 types of Prajñā: hearing, reflection and meditation",
+      "children": [
+        {
+          "id": "2.1",
+          "tib": "ཐོས་པའི་ཤེས་རབ",
+          "en": "Prajñā of Hearing",
+          "children": [
+            {
+              "id": "2.1.1",
+              "tib": "ཐོས་པ་གཙོ་ཆེ་བའི་རྒྱུ་མཚན",
+              "en": "Reasons for hearing (wisdom) being most important",
+              "children": []
+            },
+            {
+              "id": "2.1.2",
+              "tib": "ཐོས་པའི་ཤེས་རབ་དངོས་བཤད་པ",
+              "en": "Actual exposition of Hearing Prajñā",
+              "children": [
+                {
+                  "id": "2.1.2.1",
+                  "tib": "འཇལ་བྱེད་རིན་ཆེན་ལྡེ་མིག་གི་རྣམ་བཞག",
+                  "en": "Cognitive means: presentation of the Jewel Key",
+                  "children": [
+                    {
+                      "id": "2.1.2.1.1",
+                      "tib": "མདོར་བསྟན་པ",
+                      "en": "Brief",
+                      "children": []
+                    },
+                    {
+                      "id": "2.1.2.1.2",
+                      "tib": "རྒྱས་པར་བཤད་པ",
+                      "en": "Extensive",
+                      "children": [
+                        {
+                          "id": "2.1.2.1.2.1",
+                          "tib": "དྲང་ངེས་ཀྱི་ཁྱད་པར",
+                          "en": "Difference between provisional and definitive",
+                          "children": []
+                        },
+                        {
+                          "id": "2.1.2.1.2.2",
+                          "tib": "དགོངས་ལྡེམ་གྱི་ཁྱད་པར་བཤད་པ",
+                          "en": "Difference between underlying intent and indirect meaning",
+                          "children": [
+                            {
+                              "id": "2.1.2.1.2.2.1",
+                              "tib": "དགོས་པ་བརྗོད་ནས་མདོར་བསྟན་པ",
+                              "en": "Brief presentation based on purpose",
+                              "children": []
+                            },
+                            {
+                              "id": "2.1.2.1.2.2.2",
+                              "tib": "སོ་སོའི་ངོ་བོ་རྒྱས་པར་བཤད་པ",
+                              "en": "Extensive presentation of individual essences",
+                              "children": [
+                                {
+                                  "id": "2.1.2.1.2.2.2.1",
+                                  "tib": "དགོངས་པ་བཞི་བཤད་པ",
+                                  "en": "Four Intentionalities (dgongs pa bzhi)",
+                                  "children": [
+                                    {
+                                      "id": "2.1.2.1.2.2.2.1.1",
+                                      "tib": "མདོར་བསྟན་པ",
+                                      "en": "Brief",
+                                      "children": []
+                                    },
+                                    {
+                                      "id": "2.1.2.1.2.2.2.1.2",
+                                      "tib": "རྒྱས་པར་བཤད་པ",
+                                      "en": "Extensive",
+                                      "children": [
+                                        { "id": "2.1.2.1.2.2.2.1.2.1", "tib": "མཉམ་པ་ཉིད", "en": "Indicating Equality (samatā)", "children": [] },
+                                        { "id": "2.1.2.1.2.2.2.1.2.2", "tib": "དོན་གཞན", "en": "Indicative of another meaning (arthāntara)", "children": [] },
+                                        { "id": "2.1.2.1.2.2.2.1.2.3", "tib": "དུས་གཞན", "en": "Indicative of another time (kālāntara)", "children": [] },
+                                        { "id": "2.1.2.1.2.2.2.1.2.4", "tib": "བསམ་པ", "en": "Revealing intentions (āśaya)", "children": [] }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "2.1.2.1.2.2.2.2",
+                                  "tib": "ལྡེམ་དགོངས་བཞི་བཤད་པ",
+                                  "en": "Four Indirect Purposes / Hidden Intents (ldem dgongs bzhi)",
+                                  "children": [
+                                    {
+                                      "id": "2.1.2.1.2.2.2.2.1",
+                                      "tib": "མདོར་བསྟན་པ",
+                                      "en": "Brief",
+                                      "children": []
+                                    },
+                                    {
+                                      "id": "2.1.2.1.2.2.2.2.2",
+                                      "tib": "རྒྱས་པར་བཤད་པ",
+                                      "en": "Extensive — 4 topics",
+                                      "children": [
+                                        { "id": "2.1.2.1.2.2.2.2.2.1", "tib": "འཇུགས་པ་ལྡེམ་པོར་དགོངས་པ", "en": "Intending entry (avatāra-abhisaṃdhi)", "children": [] },
+                                        { "id": "2.1.2.1.2.2.2.2.2.2", "tib": "མཚན་ཉིད་ལ་ལྡེམ་པོར་དགོངས་པ", "en": "Intending characteristics (lakṣaṇa-abhisaṃdhi)", "children": [] },
+                                        { "id": "2.1.2.1.2.2.2.2.2.3", "tib": "སྒྲིབ་པའི་གཉེན་པོར", "en": "Intending an antidote (pratipakṣa-abhisaṃdhi)", "children": [] },
+                                        { "id": "2.1.2.1.2.2.2.2.2.4", "tib": "བསྒྱུར་བ་ལྡེམ་དགོངས", "en": "Intending interpretation (pariṇāma-abhisaṃdhi)", "children": [] }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "2.1.2.1.2.2.2.3",
+                                  "tib": "དེ་གཉིས་ཀྱི་ཁྱད་པར",
+                                  "en": "Differences between the two",
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "2.1.2.2",
+                  "tib": "གཞལ་བྱ་དམ་ཆོས་མཛོད་ཀྱི་རྣམ་བཞག",
+                  "en": "Dharma to be comprehended: presentation of the Treasury",
+                  "children": [
+                    {
+                      "id": "2.1.2.2.1",
+                      "tib": "བདེན་གཉིས་ཀྱི་རང་བཞིན་སྤྱིར་བཤད་པ",
+                      "en": "General presentation of the Two Truths",
+                      "children": [
+                        { "id": "2.1.2.2.1.1", "tib": "མདོར་བསྟན་པ", "en": "Brief", "children": [] },
+                        {
+                          "id": "2.1.2.2.1.2",
+                          "tib": "རྒྱས་པར་བཤད་པ",
+                          "en": "Extensive",
+                          "children": [
+                            { "id": "2.1.2.2.1.2.1", "tib": "ངོ་བོ", "en": "Essential Identity", "children": [] },
+                            { "id": "2.1.2.2.1.2.2", "tib": "མཚན་ཉིད", "en": "Characteristics", "children": [] },
+                            { "id": "2.1.2.2.1.2.3", "tib": "ངེས་ཚིག", "en": "Definition", "children": [] },
+                            { "id": "2.1.2.2.1.2.4", "tib": "གྲངས་ངེས", "en": "Ascertainment of number", "children": [] },
+                            { "id": "2.1.2.2.1.2.5", "tib": "ངེས་བྱེད་ཀྱི་ཚད་མ", "en": "Logical proof", "children": [] },
+                            { "id": "2.1.2.2.1.2.6", "tib": "དབྱེ་བ", "en": "Distinctions", "children": [] },
+                            { "id": "2.1.2.2.1.2.7", "tib": "དགོས་ཆེད", "en": "Deliberate purpose", "children": [] }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "2.1.2.2.2",
+                      "tib": "གྲུབ་མཐའི་འདོད་གཞུང་བྱེ་བྲག་ཏུ་བཤད་པ",
+                      "en": "Presentation of Philosophical Tenets",
+                      "children": [
+                        { "id": "2.1.2.2.2.1", "tib": "མདོར་བསྟན་པ", "en": "Brief", "children": [] },
+                        {
+                          "id": "2.1.2.2.2.2",
+                          "tib": "རྒྱས་པར་བཤད་པ",
+                          "en": "Extensive — the 4 Philosophical Schools",
+                          "children": [
+                            { "id": "2.1.2.2.2.2.1", "tib": "བྱེ་བྲག་སྨྲ་བ", "en": "Vaibhāṣika", "children": [] },
+                            { "id": "2.1.2.2.2.2.2", "tib": "མདོ་སྡེ་པ", "en": "Sautrāntrika", "children": [] },
+                            { "id": "2.1.2.2.2.2.3", "tib": "སེམས་ཙམ་པ", "en": "Cittamātra", "children": [] },
+                            {
+                              "id": "2.1.2.2.2.2.4",
+                              "tib": "དབུ་མ་པའི་གྲུབ་མཐའ་བཤད་པ",
+                              "en": "Madhyamaka",
+                              "children": [
+                                { "id": "2.1.2.2.2.2.4.1", "tib": "རང་རྒྱུད་པ", "en": "Svātantrika", "children": [] },
+                                {
+                                  "id": "2.1.2.2.2.2.4.2",
+                                  "tib": "ཐལ་འགྱུར་པ",
+                                  "en": "Prāsaṅgika",
+                                  "children": [
+                                    {
+                                      "id": "2.1.2.2.2.2.4.2.1",
+                                      "tib": "གཞི་དབུ་མ — བདེན་གཉིས་ཟུང་འཇུག",
+                                      "en": "Ground Madhyamaka: coalescence of 2 truths",
+                                      "children": [
+                                        {
+                                          "id": "2.1.2.2.2.2.4.2.1.1",
+                                          "tib": "གཞི་གཏན་ལ་དབབ་ཚུལ་དངོས་བཤད་པ",
+                                          "en": "Actual ascertainment of the ground",
+                                          "children": [
+                                            {
+                                              "id": "2.1.2.2.2.2.4.2.1.1.1",
+                                              "tib": "ཤེས་བྱ་བདེན་གཉིས་ཀྱི་རང་བཞིན་གཏན་ལ་དབབ་པ",
+                                              "en": "Ascertaining objects of knowledge as having the nature of 2 truths",
+                                              "children": []
+                                            },
+                                            {
+                                              "id": "2.1.2.2.2.2.4.2.1.1.2",
+                                              "tib": "དགག་བྱ་བདག་གཉིས་ཀྱི་ངོ་བོ་ངོས་བཟུང་བ",
+                                              "en": "Identifying the object of refutation — 2 kinds of self",
+                                              "children": [
+                                                { "id": "2.1.2.2.2.2.4.2.1.1.2.1", "tib": "བདག་དང་བདག་འཛིན་སོགས་ཀྱི་ཁྱད་པར་དབྱད་ནས་སྤང་བྱ་ངོས་བཟུང་བ", "en": "Differentiating self, self-grasping, etc.", "children": [] },
+                                                { "id": "2.1.2.2.2.2.4.2.1.1.2.2", "tib": "ཁྱད་པར་གྱི་ཆོས་གཞན་བསྟན་པ", "en": "Other special dharmas", "children": [] }
+                                              ]
+                                            },
+                                            {
+                                              "id": "2.1.2.2.2.2.4.2.1.1.3",
+                                              "tib": "འགོག་བྱེད་གཏན་ཚིགས་ཀྱིས་ཇི་ལྟར་དབྱད་པའི་ཚུལ་བསྟན་པ",
+                                              "en": "Refuting arguments and how to use them",
+                                              "children": [
+                                                { "id": "2.1.2.2.2.2.4.2.1.1.3.1", "tib": "གཞལ་ཚུལ་སྤྱིར་བསྟན་པ", "en": "General mode of analysis", "children": [] },
+                                                {
+                                                  "id": "2.1.2.2.2.2.4.2.1.1.3.2",
+                                                  "tib": "གཏན་ཚིགས་བྱེ་བྲག་ཏུ་བཤད་པ",
+                                                  "en": "Extensive presentation of individual arguments",
+                                                  "children": [
+                                                    { "id": "2.1.2.2.2.2.4.2.1.1.3.2.1", "tib": "རྒྱུ་ལ་དབྱོད་པ — རྡོ་རྗེ་གཟེགས་མ", "en": "Examining causes: Vajra Splinters (vajrakaṇa)", "children": [] },
+                                                    { "id": "2.1.2.2.2.2.4.2.1.1.3.2.2", "tib": "འབྲས་བུ་ལ་དབྱོད་པ — ཡོད་མེད་སྐྱེ་འགོག", "en": "Examining results: existence/nonexistence, arising/ceasing", "children": [] },
+                                                    { "id": "2.1.2.2.2.2.4.2.1.1.3.2.3", "tib": "གཉིས་ཀ་ལ་དབྱོད་པ — མུ་བཞི་སྐྱེ་འགོག", "en": "Examining both: 4 possibilities (catuṣkoṭi)", "children": [] },
+                                                    { "id": "2.1.2.2.2.2.4.2.1.1.3.2.4", "tib": "ངོ་བོ་ལ་དབྱོད་པ — རྟེན་འབྲེལ་ཆེན་མོ", "en": "Examining essential identity: great interdependence (mahāpratītyasamutpāda)", "children": [] },
+                                                    { "id": "2.1.2.2.2.2.4.2.1.1.3.2.5", "tib": "གཅིག་དུ་བྲལ", "en": "The argument of one and many (ekānekaviyoga)", "children": [] }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        { "id": "2.1.2.2.2.2.4.2.1.2", "tib": "དེ་གཞན་ལས་འཕགས་པའི་རྒྱུ་མཚན་བསྟན་པ", "en": "Reasons for its superiority over others", "children": [] },
+                                        { "id": "2.1.2.2.2.2.4.2.1.3", "tib": "དེ་ལྟར་གཏན་ལ་དབབ་པའི་སྒོམ་དོན་ངོས་བཟུང་བ", "en": "Identifying the object of meditation from what was ascertained", "children": [] },
+                                        { "id": "2.1.2.2.2.2.4.2.1.4", "tib": "ཁས་ལེན་མི་ལེན་གྱི་རྣམ་བཞག་བྱེ་བྲག་ཏུ་བཤད་པ", "en": "What is and isn't posited — detailed", "children": [] }
+                                      ]
+                                    },
+                                    { "id": "2.1.2.2.2.2.4.2.2", "tib": "ལམ་དབུ་མ — ཚོགས་གཉིས་ཟུང་འཇུག", "en": "Path Madhyamaka: coalescence of 2 accumulations", "children": [] },
+                                    { "id": "2.1.2.2.2.2.4.2.3", "tib": "འབྲས་བུ་དབུ་མ — སྐུ་གཉིས་ཟུང་འཇུག", "en": "Result Madhyamaka: coalescence of 2 Kāyas", "children": [] }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2.2",
+          "tib": "བསམ་པའི་ཤེས་རབ",
+          "en": "Prajñā of Reflection",
+          "children": [
+            { "id": "2.2.1", "tib": "མདོར་བསྟན་པ", "en": "Brief", "children": [] },
+            {
+              "id": "2.2.2",
+              "tib": "རྒྱས་པར་བཤད་པ",
+              "en": "Extensive",
+              "children": [
+                { "id": "2.2.2.1", "tib": "གཤིས་ཀྱི་རྟེན་འབྲེལ", "en": "Causal links of interdependence resting upon the nature", "children": [] },
+                { "id": "2.2.2.2", "tib": "འཁོར་བའི་རྟེན་འབྲེལ", "en": "Saṃsāric links of interdependence", "children": [] },
+                { "id": "2.2.2.3", "tib": "མྱང་འདས་ཀྱི་རྟེན་འབྲེལ", "en": "Nirvāṇa-related links of interdependence", "children": [] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2.3",
+          "tib": "སྒོམ་པའི་ཤེས་རབ",
+          "en": "Prajñā of Meditation",
+          "children": [
+            { "id": "2.3.1", "tib": "མདོར་བསྟན་པ", "en": "Brief", "children": [] },
+            {
+              "id": "2.3.2",
+              "tib": "རྒྱས་པར་བཤད་པ",
+              "en": "Extensive",
+              "children": [
+                { "id": "2.3.2.1", "tib": "སྒོམ་པའི་ཤེས་རབ་དངོས་བཤད་པ", "en": "Actual presentation of the Prajñā of Meditation", "children": [] },
+                { "id": "2.3.2.2", "tib": "ལམ་བགྲོད་ཚུལ་བཤད་པ", "en": "Mode of traversing the path", "children": [] },
+                { "id": "2.3.2.3", "tib": "འབྲས་བུ་ཐོབ་ཚུལ་བཤད་པ", "en": "Mode of attaining the result", "children": [] },
+                { "id": "2.3.2.4", "tib": "ཕྱིན་དྲུག་གི་དོན་བསྡུ་བ", "en": "Summary of the Six Perfections", "children": [] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// ═══════════════════════════════════════════════
+//  BUILD FLAT INDEX
+// ═══════════════════════════════════════════════
+const nodeIndex = {}; // id → { node, parentId, depth }
+
+function buildIndex(nodes, parentId, depth) {
+  for (const node of nodes) {
+    nodeIndex[node.id] = { node, parentId, depth };
+    if (node.children && node.children.length) {
+      buildIndex(node.children, node.id, depth + 1);
+    }
+  }
+}
+buildIndex(DATA.nodes, null, 0);
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+const state = {
+  expanded: new Set(),
+  selected: null,
+  query: ''
+};
+
+// Default: expand depth 0 and 1
+Object.values(nodeIndex).forEach(({ node, depth }) => {
+  if (depth <= 1) state.expanded.add(node.id);
+});
+
+// ═══════════════════════════════════════════════
+//  DEPTH COLORS
+// ═══════════════════════════════════════════════
+const DEPTH_COLORS = [
+  '#7c2d2d','#a04020','#c46a1a','#c49a0a',
+  '#7a9020','#2a7a50','#1a6888','#2a4a9a',
+  '#5a2a9a','#8a1a7a','#aa1a4a','#7c2d2d'
+];
+
+function depthColor(d) {
+  return DEPTH_COLORS[Math.min(d, DEPTH_COLORS.length - 1)];
+}
+
+// ═══════════════════════════════════════════════
+//  SEARCH HELPERS
+// ═══════════════════════════════════════════════
+function getMatchingIds(q) {
+  if (!q) return null;
+  const lq = q.toLowerCase();
+  const matches = new Set();
+  const visible = new Set(); // matches + all their ancestors
+
+  Object.values(nodeIndex).forEach(({ node }) => {
+    if (
+      node.tib.toLowerCase().includes(lq) ||
+      node.en.toLowerCase().includes(lq) ||
+      node.id.toLowerCase().includes(lq)
+    ) {
+      matches.add(node.id);
+    }
+  });
+
+  // Collect ancestors for each match
+  matches.forEach(id => {
+    visible.add(id);
+    let cur = nodeIndex[id];
+    while (cur && cur.parentId) {
+      visible.add(cur.parentId);
+      cur = nodeIndex[cur.parentId];
+    }
+  });
+
+  return { matches, visible };
+}
+
+function highlight(text, q) {
+  if (!q) return escHtml(text);
+  const escaped = escHtml(text);
+  const escapedQ = escHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(new RegExp(escapedQ, 'gi'), m => `<mark>${m}</mark>`);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════
+function renderTree() {
+  const container = document.getElementById('treeContainer');
+  const searchResult = state.query ? getMatchingIds(state.query) : null;
+  container.innerHTML = '';
+
+  for (const node of DATA.nodes) {
+    const el = renderNode(node, 0, searchResult);
+    if (el) container.appendChild(el);
+  }
+
+  // Update search count
+  const countEl = document.getElementById('searchCount');
+  if (searchResult) {
+    const n = searchResult.matches.size;
+    countEl.textContent = n === 0 ? 'No matches' : `${n} match${n !== 1 ? 'es' : ''}`;
+  } else {
+    countEl.textContent = '';
+  }
+}
+
+function renderNode(node, depth, searchResult) {
+  const { node: n } = nodeIndex[node.id] || {};
+  const actualDepth = nodeIndex[node.id] ? nodeIndex[node.id].depth : depth;
+  const hasChildren = node.children && node.children.length > 0;
+  const isExpanded = state.expanded.has(node.id);
+  const isSelected = state.selected === node.id;
+  const q = state.query;
+
+  // Search filtering
+  if (searchResult) {
+    if (!searchResult.visible.has(node.id)) return null;
+  }
+
+  const isMatch = searchResult && searchResult.matches.has(node.id);
+
+  const wrapper = document.createElement('div');
+  wrapper.className = `tree-node depth-${actualDepth} tree-anchor`;
+  wrapper.dataset.id = node.id;
+
+  // ── Node row
+  const row = document.createElement('div');
+  row.className = 'node-row' +
+    (isSelected ? ' selected' : '') +
+    (isMatch ? ' search-match' : '');
+  row.style.borderLeftColor = !isSelected ? depthColor(actualDepth) : '';
+
+  // Toggle button
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'toggle-btn' + (hasChildren ? '' : ' leaf');
+  toggleBtn.setAttribute('aria-label', isExpanded ? 'Collapse' : 'Expand');
+  if (hasChildren) {
+    const arrow = document.createElement('span');
+    arrow.className = 'toggle-arrow' + (isExpanded ? ' open' : '');
+    arrow.textContent = '▶';
+    toggleBtn.appendChild(arrow);
+    toggleBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleExpand(node.id);
+    });
+  }
+
+  // Node content
+  const content = document.createElement('div');
+  content.className = 'node-content';
+
+  const tibSpan = document.createElement('span');
+  tibSpan.className = 'node-tib';
+  tibSpan.innerHTML =
+    `<span class="node-id">${escHtml(node.id)}</span>` +
+    highlight(node.tib, q);
+
+  const enSpan = document.createElement('span');
+  enSpan.className = 'node-en';
+  enSpan.innerHTML = highlight(node.en, q);
+  if (hasChildren) {
+    enSpan.innerHTML += ` <span class="child-count">${node.children.length}</span>`;
+  }
+
+  content.appendChild(tibSpan);
+  content.appendChild(enSpan);
+
+  row.appendChild(toggleBtn);
+  row.appendChild(content);
+
+  row.addEventListener('click', () => selectNode(node.id));
+
+  wrapper.appendChild(row);
+
+  // ── Children
+  if (hasChildren) {
+    const childWrap = document.createElement('div');
+    childWrap.className = 'children-wrap' + (isExpanded || searchResult ? '' : ' collapsed');
+    childWrap.dataset.parentId = node.id;
+
+    for (const child of node.children) {
+      const childEl = renderNode(child, actualDepth + 1, searchResult);
+      if (childEl) childWrap.appendChild(childEl);
+    }
+
+    wrapper.appendChild(childWrap);
+  }
+
+  return wrapper;
+}
+
+// ═══════════════════════════════════════════════
+//  INTERACTIONS
+// ═══════════════════════════════════════════════
+function toggleExpand(id) {
+  if (state.expanded.has(id)) {
+    state.expanded.delete(id);
+  } else {
+    state.expanded.add(id);
+  }
+  renderTree();
+  // Re-select to update breadcrumb
+  updateBreadcrumb();
+}
+
+function selectNode(id) {
+  state.selected = (state.selected === id) ? null : id;
+  // Expand ancestors
+  if (state.selected) {
+    let cur = nodeIndex[id];
+    while (cur && cur.parentId) {
+      state.expanded.add(cur.parentId);
+      cur = nodeIndex[cur.parentId];
+    }
+  }
+  renderTree();
+  updateBreadcrumb();
+
+  // Scroll selected node into view
+  if (state.selected) {
+    const el = document.querySelector(`[data-id="${CSS.escape(state.selected)}"]`);
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    }
+  }
+}
+
+function getBreadcrumb(id) {
+  const path = [];
+  let cur = nodeIndex[id];
+  while (cur) {
+    path.unshift(cur.node);
+    cur = cur.parentId ? nodeIndex[cur.parentId] : null;
+  }
+  return path;
+}
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  if (!state.selected) {
+    bc.className = 'breadcrumb-bar empty';
+    bc.innerHTML = 'Click any node to mark your place';
+    return;
+  }
+
+  const path = getBreadcrumb(state.selected);
+  bc.className = 'breadcrumb-bar';
+  bc.innerHTML = path.map((node, i) => {
+    const isLast = i === path.length - 1;
+    return `<span class="crumb" data-crumb-id="${escHtml(node.id)}" title="${escHtml(node.en)}">
+      <span class="crumb-id">${escHtml(node.id)}</span><span class="crumb-tib">${escHtml(node.tib)}</span>
+    </span>${isLast ? '' : '<span class="crumb-sep">›</span>'}`;
+  }).join('');
+
+  bc.querySelectorAll('.crumb').forEach(el => {
+    el.addEventListener('click', () => selectNode(el.dataset.crumbId));
+  });
+}
+
+function expandAll() {
+  Object.keys(nodeIndex).forEach(id => state.expanded.add(id));
+  renderTree();
+  updateBreadcrumb();
+}
+
+function collapseAll() {
+  state.expanded.clear();
+  renderTree();
+  updateBreadcrumb();
+}
+
+// ═══════════════════════════════════════════════
+//  SEARCH
+// ═══════════════════════════════════════════════
+let searchTimer = null;
+
+document.getElementById('searchBox').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    state.query = e.target.value.trim();
+    const clearBtn = document.getElementById('searchClear');
+    clearBtn.classList.toggle('visible', state.query.length > 0);
+    renderTree();
+    updateBreadcrumb();
+  }, 180);
+});
+
+document.getElementById('searchClear').addEventListener('click', () => {
+  document.getElementById('searchBox').value = '';
+  state.query = '';
+  document.getElementById('searchClear').classList.remove('visible');
+  renderTree();
+  updateBreadcrumb();
+});
+
+document.getElementById('btnExpandAll').addEventListener('click', expandAll);
+document.getElementById('btnCollapseAll').addEventListener('click', collapseAll);
+
+// ═══════════════════════════════════════════════
+//  KEYBOARD NAVIGATION
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (state.query) {
+      document.getElementById('searchBox').value = '';
+      state.query = '';
+      document.getElementById('searchClear').classList.remove('visible');
+      renderTree();
+    } else if (state.selected) {
+      state.selected = null;
+      renderTree();
+      updateBreadcrumb();
+    }
+  }
+  if ((e.key === 'f' || e.key === 'F') && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    document.getElementById('searchBox').focus();
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+renderTree();
+updateBreadcrumb();
+</script>
+</body>
+</html>
