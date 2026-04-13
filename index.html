@@ -601,7 +601,8 @@
 
       /* Tree layout */
       .tree-container { padding: 0 !important; max-width: 100% !important; }
-      .tree-node { page-break-inside: avoid; }
+      /* Protect only the row itself from splitting — not the whole subtree wrapper */
+      .node-row { page-break-inside: avoid; }
 
       /* Node rows */
       .node-row {
