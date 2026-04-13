@@ -345,6 +345,24 @@
     .node-copy-btn:hover { opacity: 1 !important; background: rgba(0,0,0,0.07); }
     .node-copy-btn.copied { opacity: 1 !important; color: #5a8a3a; }
 
+    /* ── Print button (tree node) ───────────────── */
+    .node-print-btn {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #b09070;
+      font-size: 11px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      opacity: 0;
+      align-self: flex-start;
+      margin-top: 5px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .node-row:hover .node-print-btn { opacity: 0.5; }
+    .node-print-btn:hover { opacity: 1 !important; background: rgba(0,0,0,0.07); }
+
     /* ── Copy toast ─────────────────────────────── */
     .copy-toast {
       position: fixed;
@@ -547,9 +565,81 @@
 
     /* ── Smooth scroll offset ───────────────────────── */
     .tree-anchor { scroll-margin-top: 140px; }
+
+    /* ── Print header: hidden on screen ─────────── */
+    .print-header { display: none; }
+
+    /* ══════════════════════════════════════════════
+       PRINT / PDF
+       ══════════════════════════════════════════════ */
+    @media print {
+      @page { size: A4 portrait; margin: 18mm 16mm; }
+
+      /* Hide all interactive chrome */
+      .app-header, .controls, .breadcrumb-bar, .intro-section,
+      .copy-toast, .node-copy-btn, .node-print-btn,
+      .toggle-btn, .copy-path-btn, .print-btn { display: none !important; }
+
+      html, body { background: #fff !important; color: #000 !important; }
+
+      /* Show the print-specific header */
+      .print-header {
+        display: block !important;
+        padding-bottom: 10pt;
+        margin-bottom: 12pt;
+        border-bottom: 1.5pt solid #7c2d2d;
+        page-break-after: avoid;
+      }
+      .print-title-tib {
+        font-family: 'Noto Sans Tibetan', serif;
+        font-size: 15pt; line-height: 2.0; display: block; color: #231208;
+      }
+      .print-title-en {
+        font-size: 10pt; font-style: italic; color: #6b5f50; display: block; margin-top: 2pt;
+      }
+      .print-breadcrumb { margin-top: 6pt; font-size: 9pt; color: #5a4a38; line-height: 1.5; }
+
+      /* Tree layout */
+      .tree-container { padding: 0 !important; max-width: 100% !important; }
+      .tree-node { page-break-inside: avoid; }
+
+      /* Node rows */
+      .node-row {
+        padding: 2pt 0 !important; border-radius: 0 !important;
+        border-left-width: 2pt !important; border-left-style: solid !important;
+      }
+      .node-row:hover { background: transparent !important; }
+
+      /* Selected node highlight */
+      .node-row.selected {
+        background: #fef0d8 !important;
+        border-left-color: #c46a1a !important;
+        border-left-width: 3pt !important;
+      }
+
+      /* Children indent */
+      .children-wrap { padding-left: 14pt !important; margin-left: 6pt !important; border-left: 0.5pt dashed #ccc !important; }
+      .children-wrap.collapsed { display: none !important; }
+
+      /* Typography */
+      .node-tib  { font-family: 'Noto Sans Tibetan', serif; font-size: 11pt !important; line-height: 2.0 !important; color: #000 !important; }
+      .node-en   { font-size: 9pt !important; color: #4a3a28 !important; }
+      .node-id   { font-size: 8pt !important; color: #9a7a50 !important; }
+      .child-count { display: none !important; }
+      mark { background: #e0e0e0 !important; color: #000 !important; }
+
+      /* Force color/border output */
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body>
+
+<!-- Print header: screen-hidden, populated by JS just before window.print() -->
+<div class="print-header" id="printHeader" aria-hidden="true">
+  <div class="print-doc-title" id="printDocTitle"></div>
+  <div class="print-breadcrumb" id="printBreadcrumb"></div>
+</div>
 
 <div class="app-header">
   <div class="header-label">Sa bche Explorer · Yonten Dzo</div>
@@ -579,6 +669,16 @@
     <button class="btn size-btn" id="btnSizeDown" title="Decrease text size">−</button>
     <button class="btn size-btn" id="btnSizeUp" title="Increase text size">+</button>
   </div>
+  <div class="divider"></div>
+  <button class="btn print-btn" id="btnPrint" title="Print / Save as PDF">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="9" width="10" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M5 9V3h6v6" stroke="currentColor" stroke-width="1.4"/>
+      <rect x="5" y="11" width="4" height="1.2" rx="0.5" fill="currentColor"/>
+      <circle cx="11.5" cy="11.5" r="0.8" fill="currentColor"/>
+    </svg>
+    Print
+  </button>
 </div>
 
 <div class="breadcrumb-bar empty" id="breadcrumb">
@@ -1160,6 +1260,14 @@ function renderNode(node, depth, searchResult) {
   });
   row.appendChild(nodeCopyBtn);
 
+  // Print-from-node button (shown on hover)
+  const nodePrintBtn = document.createElement('button');
+  nodePrintBtn.className = 'node-print-btn';
+  nodePrintBtn.title = 'Print from this node';
+  nodePrintBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="10" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M5 9V3h6v6" stroke="currentColor" stroke-width="1.4"/></svg>';
+  nodePrintBtn.addEventListener('click', e => { e.stopPropagation(); printTree(node.id); });
+  row.appendChild(nodePrintBtn);
+
   row.addEventListener('click', () => selectNode(node.id));
 
   wrapper.appendChild(row);
@@ -1286,6 +1394,14 @@ function updateBreadcrumb() {
     copyPath(state.selected, copyBtn);
   });
   bc.appendChild(copyBtn);
+
+  // Print button next to copy button in breadcrumb
+  const bcPrintBtn = document.createElement('button');
+  bcPrintBtn.className = 'btn print-btn';
+  bcPrintBtn.title = 'Print / Save as PDF';
+  bcPrintBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="10" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M5 9V3h6v6" stroke="currentColor" stroke-width="1.4"/></svg>';
+  bcPrintBtn.addEventListener('click', e => { e.stopPropagation(); printTree(state.selected); });
+  bc.appendChild(bcPrintBtn);
 }
 
 function expandAll() {
@@ -1394,6 +1510,68 @@ document.getElementById('introToggle').addEventListener('click', () => {
   const isOpen = body.classList.toggle('visible');
   arrow.classList.toggle('open', isOpen);
 });
+
+// ═══════════════════════════════════════════════
+//  PRINT
+// ═══════════════════════════════════════════════
+function preparePrintHeader() {
+  // Document title — respect active language settings
+  const titleEl = document.getElementById('printDocTitle');
+  titleEl.innerHTML = '';
+  if (state.showTib) {
+    const t = document.createElement('span');
+    t.className = 'print-title-tib';
+    t.textContent = DATA.title_tib;
+    titleEl.appendChild(t);
+  }
+  if (state.showEn) {
+    const e = document.createElement('span');
+    e.className = 'print-title-en';
+    e.textContent = DATA.title_en;
+    titleEl.appendChild(e);
+  }
+
+  // Breadcrumb path — respect active language settings
+  const bcEl = document.getElementById('printBreadcrumb');
+  if (!state.selected) { bcEl.textContent = ''; return; }
+  const path = getBreadcrumb(state.selected);
+  const parts = path.map(node => {
+    if (state.showTib && state.showEn) return `${node.id}  ${node.tib} (${node.en})`;
+    if (state.showTib)                 return `${node.id}  ${node.tib}`;
+    return `${node.id}  ${node.en}`;
+  });
+  bcEl.textContent = parts.join('  ›  ');
+}
+
+function printTree(fromNodeId) {
+  const prevSelected = state.selected;
+  const prevExpanded = new Set(state.expanded);
+
+  if (fromNodeId != null && fromNodeId !== state.selected) {
+    // Expand all ancestors so the target node is visible in the DOM
+    let cur = nodeIndex[fromNodeId];
+    while (cur) {
+      state.expanded.add(cur.node.id);
+      cur = cur.parentId ? nodeIndex[cur.parentId] : null;
+    }
+    state.selected = fromNodeId;
+    renderTree();
+    updateBreadcrumb();
+  }
+
+  preparePrintHeader();
+  window.print(); // synchronous on desktop — blocks until dialog is dismissed
+
+  // Restore previous state after print dialog closes
+  if (fromNodeId != null && fromNodeId !== prevSelected) {
+    state.selected = prevSelected;
+    state.expanded = prevExpanded;
+    renderTree();
+    updateBreadcrumb();
+  }
+}
+
+document.getElementById('btnPrint').addEventListener('click', () => printTree());
 
 // ═══════════════════════════════════════════════
 //  INIT
