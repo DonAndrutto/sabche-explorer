@@ -21,7 +21,13 @@
       --controls-bg: #f0e9dd;
       --font-size-tib: 15px;
       --font-size-en: 12px;
+      --header-tib-size: 20px;
+      /* Height of a node's first text line: the Tibetan line box (line-height 2.0) */
+      --first-line: calc(var(--font-size-tib) * 2);
     }
+
+    /* With Tibetan hidden, the first line is the English one (line-height 1.5) */
+    html.hide-tib { --first-line: calc(var(--font-size-en) * 1.5); }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -46,16 +52,16 @@
     }
 
     .header-label {
-      font-size: 10px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: #9a7a5a;
+      color: #c79e6f;
       margin-bottom: 3px;
     }
 
     .header-tib {
       font-family: 'Noto Sans Tibetan', serif;
-      font-size: 20px;
+      font-size: var(--header-tib-size);
       line-height: 2.0;
       color: var(--header-text);
       display: block;
@@ -66,7 +72,8 @@
       color: #c0996a;
       font-style: italic;
       display: block;
-      margin-top: -4px;
+      /* Pull up under the tall Tibetan line box; scales with the Tibetan size */
+      margin-top: calc(var(--header-tib-size) * -0.2);
     }
 
     /* ── Controls bar ───────────────────────────────── */
@@ -91,7 +98,8 @@
       left: 9px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 13px;
+      display: flex;
+      align-items: center;
       color: var(--text-muted);
       pointer-events: none;
     }
@@ -110,7 +118,7 @@
 
     .search-box:focus {
       border-color: var(--selected-border);
-      box-shadow: 0 0 0 2px rgba(196,106,26,0.18);
+      box-shadow: 0 0 0 3px rgba(196,106,26,0.4);
     }
 
     .search-clear {
@@ -153,7 +161,7 @@
     .divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
 
     .search-count {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-muted);
       white-space: nowrap;
       min-width: 60px;
@@ -173,12 +181,13 @@
     }
 
     .breadcrumb-bar.empty {
-      color: #b8a890;
+      color: #807055;
       font-style: italic;
     }
 
     .crumb {
       cursor: pointer;
+      font: inherit; /* button reset — keep before the font-weight override */
       color: #8b4c1a;
       font-weight: 500;
       padding: 1px 3px;
@@ -186,7 +195,9 @@
       transition: background 0.1s;
       display: inline-flex;
       flex-direction: column;
-      vertical-align: middle;
+      background: none;
+      border: none;
+      text-align: left;
     }
 
     .crumb:hover { background: #fce8cc; }
@@ -198,18 +209,18 @@
     }
 
     .crumb-en {
-      font-size: 10px;
-      color: #b09070;
+      font-size: 11px;
+      color: #7d5e36;
       font-style: italic;
       font-weight: 400;
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
-    .crumb-sep { color: #cfc0a8; margin: 0 2px; align-self: flex-start; padding-top: 3px; }
+    .crumb-sep { color: #998256; margin: 0 2px; }
 
     .crumb-id {
-      font-size: 10px;
-      color: #b09070;
+      font-size: 11px;
+      color: #7d5e36;
       font-weight: 600;
       margin-right: 3px;
     }
@@ -252,12 +263,13 @@
       align-items: center;
       justify-content: center;
       font-size: 9px;
-      color: #a09080;
+      color: #7a6a55;
       background: none;
       border: none;
       cursor: pointer;
       padding: 0;
-      margin-top: 6px;
+      /* Center the 20px button on the first text line (2px content padding + half line box) */
+      margin-top: calc(2px + (var(--first-line) - 20px) / 2);
       border-radius: 3px;
       transition: background 0.1s, color 0.1s;
     }
@@ -272,12 +284,14 @@
     .node-content { flex: 1; min-width: 0; padding: 2px 0; }
 
     .node-id {
-      font-size: 10px;
-      color: #b89870;
+      font-size: 11px;
+      color: #7a5c32;
       font-weight: 600;
       letter-spacing: 0.04em;
       margin-right: 5px;
       font-variant-numeric: tabular-nums;
+      /* Never let the ID drive line-box height (matters when Tibetan is hidden) */
+      line-height: 1;
     }
 
     .node-tib {
@@ -293,15 +307,18 @@
       color: var(--text-muted);
       font-style: italic;
       display: block;
-      margin-top: -3px;
+      line-height: 1.5; /* --first-line (hide-tib) depends on this value */
+      /* Pull up under the tall Tibetan line box; scales with the Tibetan size */
+      margin-top: calc(var(--font-size-tib) * -0.2);
       margin-left: 0;
       word-break: break-word;
     }
 
     /* ── Language visibility ────────────────────── */
     .hide-tib .node-tib { display: none; }
-    .hide-tib .crumb-tib,
-    .hide-tib .crumb-id { display: none; }
+    .hide-tib .crumb-tib { display: none; }
+    /* English flows inline after the node ID when Tibetan is hidden */
+    .hide-tib .node-en { display: inline; margin-top: 0; }
     .hide-en .node-en,
     .hide-en .crumb-en { display: none; }
 
@@ -312,7 +329,7 @@
       background: none;
       border: 1px solid transparent;
       cursor: pointer;
-      color: #b09070;
+      color: #7d5e36;
       font-size: 13px;
       line-height: 1;
       padding: 2px 7px;
@@ -332,13 +349,17 @@
       background: none;
       border: none;
       cursor: pointer;
-      color: #b09070;
+      color: #7d5e36;
       font-size: 11px;
-      padding: 1px 5px;
+      padding: 0 5px;
+      height: 20px;
+      display: flex;
+      align-items: center;
       border-radius: 3px;
       opacity: 0;
       align-self: flex-start;
-      margin-top: 5px;
+      /* Center the 20px button on the first text line (2px content padding + half line box) */
+      margin-top: calc(2px + (var(--first-line) - 20px) / 2);
       transition: opacity 0.15s, background 0.15s, color 0.15s;
     }
     .node-row:hover .node-copy-btn { opacity: 0.5; }
@@ -351,13 +372,16 @@
       background: none;
       border: none;
       cursor: pointer;
-      color: #b09070;
+      color: #7d5e36;
       font-size: 11px;
-      padding: 1px 5px;
+      padding: 0 5px;
+      height: 20px;
+      display: flex;
+      align-items: center;
       border-radius: 3px;
       opacity: 0;
       align-self: flex-start;
-      margin-top: 5px;
+      margin-top: calc(2px + (var(--first-line) - 20px) / 2);
       transition: opacity 0.15s, background 0.15s;
     }
     .node-row:hover .node-print-btn { opacity: 0.5; }
@@ -394,7 +418,7 @@
       border: 1px solid var(--border);
       border-radius: 5px;
       background: white;
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
       color: var(--text-muted);
       white-space: nowrap;
@@ -468,17 +492,6 @@
     .depth-10 > .node-row { border-left-color: #aa1a4a; }
     .depth-11 > .node-row { border-left-color: #7c2d2d; }
 
-    /* Depth indicator dot */
-    .depth-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      margin-top: 9px;
-      margin-right: 2px;
-      opacity: 0.5;
-    }
-
     /* ── Search highlight ───────────────────────────── */
     mark {
       background: #ffe082;
@@ -492,8 +505,8 @@
 
     /* ── Node count badge ───────────────────────────── */
     .child-count {
-      font-size: 10px;
-      color: #b09070;
+      font-size: 11px;
+      color: #6f5430;
       background: #f0e8d8;
       border-radius: 8px;
       padding: 0 5px;
@@ -504,12 +517,14 @@
 
     /* ── Intro section ──────────────────────────────── */
     .intro-section {
-      max-width: 860px;
       margin: 0;
       padding: 16px 22px;
       border-bottom: 1px solid var(--border);
       background: #fffdf8;
     }
+
+    /* Constrain the text measure without cutting the section background short */
+    .intro-inner { max-width: 816px; }
 
     .intro-toggle {
       display: flex;
@@ -552,14 +567,22 @@
       color: var(--text);
     }
 
+    /* ── Focus visibility ───────────────────────────── */
+    :is(.btn, .lang-btn, .toggle-btn, .search-clear, .node-copy-btn,
+        .node-print-btn, .copy-path-btn, .intro-toggle, .crumb):focus-visible {
+      outline: 2px solid var(--selected-border);
+      outline-offset: 1px;
+    }
+    .node-copy-btn:focus-visible, .node-print-btn:focus-visible { opacity: 1; }
+
     /* ── Responsive ─────────────────────────────────── */
     @media (max-width: 600px) {
+      :root { --header-tib-size: 17px; }
       .app-header { padding: 12px 14px 10px; }
       .controls { padding: 8px 14px; }
       .breadcrumb-bar { padding: 6px 14px; }
       .tree-container { padding: 10px 8px 40px; }
       .intro-section { padding: 14px; }
-      .header-tib { font-size: 17px; }
       .children-wrap { padding-left: 14px; margin-left: 6px; }
     }
 
@@ -624,7 +647,7 @@
 
       /* Typography */
       .node-tib  { font-family: 'Noto Sans Tibetan', serif; font-size: 11pt !important; line-height: 2.0 !important; color: #000 !important; }
-      .node-en   { font-size: 9pt !important; color: #4a3a28 !important; }
+      .node-en   { font-size: 9pt !important; color: #4a3a28 !important; margin-top: -2pt !important; }
       .node-id   { font-size: 8pt !important; color: #9a7a50 !important; }
       .child-count { display: none !important; }
       mark { background: #e0e0e0 !important; color: #000 !important; }
@@ -650,7 +673,7 @@
 
 <div class="controls">
   <div class="search-wrap">
-    <span class="search-icon">🔍</span>
+    <span class="search-icon"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
     <input class="search-box" id="searchBox" type="text"
       placeholder="Search (diacritics optional)…"
       autocomplete="off" spellcheck="false">
@@ -687,6 +710,7 @@
 </div>
 
 <div class="intro-section">
+  <div class="intro-inner">
   <button class="intro-toggle" id="introToggle">
     <span class="intro-arrow" id="introArrow">▶</span> About this text
   </button>
@@ -710,6 +734,7 @@
       Use the search bar to find topics across Tibetan and English — diacritics are optional
       (e.g., "prajna" will find "Prajñā"). Click any node to see its position in the breadcrumb trail.
     </p>
+  </div>
   </div>
 </div>
 
@@ -1231,20 +1256,28 @@ function renderNode(node, depth, searchResult) {
   const content = document.createElement('div');
   content.className = 'node-content';
 
+  // Node ID lives outside .node-tib so outline numbers persist when Tibetan is hidden
+  const idSpan = document.createElement('span');
+  idSpan.className = 'node-id';
+  idSpan.textContent = node.id;
+
   const tibSpan = document.createElement('span');
   tibSpan.className = 'node-tib';
-  tibSpan.innerHTML =
-    `<span class="node-id">${escHtml(node.id)}</span>` +
-    highlight(node.tib, q);
+  tibSpan.innerHTML = highlight(node.tib, q);
 
   const enSpan = document.createElement('span');
   enSpan.className = 'node-en';
   enSpan.innerHTML = highlight(node.en, q);
-  if (hasChildren) {
-    enSpan.innerHTML += ` <span class="child-count">${node.children.length}</span>`;
-  }
 
+  content.appendChild(idSpan);
   content.appendChild(tibSpan);
+  // Child count on the first line, outside .node-en, so it persists when English is hidden
+  if (hasChildren) {
+    const badge = document.createElement('span');
+    badge.className = 'child-count';
+    badge.textContent = node.children.length;
+    content.appendChild(badge);
+  }
   content.appendChild(enSpan);
 
   row.appendChild(toggleBtn);
@@ -1375,10 +1408,10 @@ function updateBreadcrumb() {
   bc.className = 'breadcrumb-bar';
   bc.innerHTML = path.map((node, i) => {
     const isLast = i === path.length - 1;
-    return `<span class="crumb" data-crumb-id="${escHtml(node.id)}" title="${escHtml(node.en)}">
+    return `<button type="button" class="crumb" data-crumb-id="${escHtml(node.id)}" title="${escHtml(node.en)}">
       <span class="crumb-top"><span class="crumb-id">${escHtml(node.id)}</span><span class="crumb-tib">${escHtml(node.tib)}</span></span>
       <span class="crumb-en">${escHtml(node.en)}</span>
-    </span>${isLast ? '' : '<span class="crumb-sep">›</span>'}`;
+    </button>${isLast ? '' : '<span class="crumb-sep">›</span>'}`;
   }).join('');
 
   bc.querySelectorAll('.crumb').forEach(el => {
