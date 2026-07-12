@@ -3,27 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive explorer of the sa bche (topical outline) of the Wisdom Chapter of Jigme Lingpa's Treasury of Precious Qualities (Yönten Dzö), in Tibetan and English.">
+  <meta name="theme-color" content="#231208">
   <title>Sabche Explorer — Wisdom Chapter</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='0.9em'%20font-size='90'%3E%E2%98%B8%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tibetan:wght@400;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
+      color-scheme: light;
       --bg: #faf8f4;
       --surface: #ffffff;
+      --surface-alt: #fffdf8;
       --border: #e2d9c8;
       --text: #1c1a17;
       --text-muted: #6b5f50;
+      --text-faint: #807055;
       --accent: #8b2c2c;
       --selected-bg: #fef5e7;
       --selected-border: #c46a1a;
       --match-bg: #fffde7;
+      --mark-bg: #ffe082;
       --header-bg: #231208;
       --header-text: #f5e6c8;
       --controls-bg: #f0e9dd;
+      --crumb-fg: #8b4c1a;
+      --crumb-muted: #7d5e36;
+      --crumb-sep: #998256;
+      --crumb-hover-bg: #fce8cc;
+      --crumb-hover-border: #e8c898;
+      --node-id: #7a5c32;
+      --badge-bg: #f0e8d8;
+      --badge-fg: #6f5430;
+      --tree-line: #ddd0b8;
+      --toggle-fg: #7a6a55;
+      --hover-bg: rgba(0,0,0,0.04);
+      --hover-bg-strong: rgba(0,0,0,0.08);
+      --btn-hover-border: #c0a880;
+      --copied-fg: #5a8a3a;
+      --copied-border: #9ac87a;
+      --copied-bg: #f0f8e8;
+      --toast-bg: #2e1e0e;
+      --toast-fg: #f5e8d0;
+      --focus-ring: rgba(196,106,26,0.4);
+      --depth-0: #7c2d2d;  --depth-1: #a04020;  --depth-2: #c46a1a;
+      --depth-3: #c49a0a;  --depth-4: #7a9020;  --depth-5: #2a7a50;
+      --depth-6: #1a6888;  --depth-7: #2a4a9a;  --depth-8: #5a2a9a;
+      --depth-9: #8a1a7a;  --depth-10: #aa1a4a; --depth-11: #7c2d2d;
       --font-size-tib: 15px;
       --font-size-en: 12px;
       --header-tib-size: 20px;
       /* Height of a node's first text line: the Tibetan line box (line-height 2.0) */
       --first-line: calc(var(--font-size-tib) * 2);
+    }
+
+    /* ── Night mode ─────────────────────────────────
+       Scoped to screen so printing always uses the light palette. */
+    @media screen {
+      html.theme-dark {
+        color-scheme: dark;
+        --bg: #171310;
+        --surface: #251f16;
+        --surface-alt: #1c1710;
+        --border: #463b28;
+        --text: #ece3d1;
+        --text-muted: #b1a183;
+        --text-faint: #8d7c5c;
+        --accent: #d9906a;
+        --selected-bg: #3b2b15;
+        --selected-border: #e09a45;
+        --match-bg: #37311b;
+        --mark-bg: #6b5510;
+        --header-bg: #120a04;
+        --controls-bg: #201a11;
+        --crumb-fg: #e2a566;
+        --crumb-muted: #bfa274;
+        --crumb-sep: #8d7a55;
+        --crumb-hover-bg: #3a2d18;
+        --crumb-hover-border: #5c4726;
+        --node-id: #c8a468;
+        --badge-bg: #352c1c;
+        --badge-fg: #cbb388;
+        --tree-line: #4a3f2a;
+        --toggle-fg: #a2906f;
+        --hover-bg: rgba(255,255,255,0.05);
+        --hover-bg-strong: rgba(255,255,255,0.10);
+        --btn-hover-border: #6b5936;
+        --copied-fg: #9ed470;
+        --copied-border: #4f7a33;
+        --copied-bg: #24391a;
+        --toast-bg: #f0e4cc;
+        --toast-fg: #2a1c0c;
+        --focus-ring: rgba(224,154,69,0.45);
+        --depth-0: #d06868;  --depth-1: #e07848;  --depth-2: #e89440;
+        --depth-3: #d8b83a;  --depth-4: #a8c050;  --depth-5: #55b080;
+        --depth-6: #4aa0c0;  --depth-7: #6a88d8;  --depth-8: #9a6ad8;
+        --depth-9: #c855b0;  --depth-10: #e05585; --depth-11: #d06868;
+      }
     }
 
     /* With Tibetan hidden, the first line is the English one (line-height 1.5) */
@@ -111,14 +186,15 @@
       border-radius: 6px;
       font-family: inherit;
       font-size: 13px;
-      background: white;
+      background: var(--surface);
+      color: var(--text);
       outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
 
     .search-box:focus {
       border-color: var(--selected-border);
-      box-shadow: 0 0 0 3px rgba(196,106,26,0.4);
+      box-shadow: 0 0 0 3px var(--focus-ring);
     }
 
     .search-clear {
@@ -142,7 +218,7 @@
       padding: 5px 12px;
       border: 1px solid var(--border);
       border-radius: 6px;
-      background: white;
+      background: var(--surface);
       font-family: inherit;
       font-size: 12px;
       cursor: pointer;
@@ -153,7 +229,7 @@
 
     .btn:hover {
       background: var(--controls-bg);
-      border-color: #c0a880;
+      border-color: var(--btn-hover-border);
     }
 
     .btn:active { opacity: 0.8; }
@@ -170,7 +246,7 @@
     /* ── Breadcrumb ─────────────────────────────────── */
     .breadcrumb-bar {
       padding: 6px 22px;
-      background: #fffdf8;
+      background: var(--surface-alt);
       border-bottom: 1px solid var(--border);
       font-size: 12px;
       min-height: 32px;
@@ -181,14 +257,14 @@
     }
 
     .breadcrumb-bar.empty {
-      color: #807055;
+      color: var(--text-faint);
       font-style: italic;
     }
 
     .crumb {
       cursor: pointer;
       font: inherit; /* button reset — keep before the font-weight override */
-      color: #8b4c1a;
+      color: var(--crumb-fg);
       font-weight: 500;
       padding: 1px 3px;
       border-radius: 3px;
@@ -200,7 +276,7 @@
       text-align: left;
     }
 
-    .crumb:hover { background: #fce8cc; }
+    .crumb:hover { background: var(--crumb-hover-bg); }
 
     .crumb-tib {
       font-family: 'Noto Sans Tibetan', serif;
@@ -210,17 +286,17 @@
 
     .crumb-en {
       font-size: 11px;
-      color: #7d5e36;
+      color: var(--crumb-muted);
       font-style: italic;
       font-weight: 400;
       line-height: 1.5;
     }
 
-    .crumb-sep { color: #998256; margin: 0 2px; }
+    .crumb-sep { color: var(--crumb-sep); margin: 0 2px; }
 
     .crumb-id {
       font-size: 11px;
-      color: #7d5e36;
+      color: var(--crumb-muted);
       font-weight: 600;
       margin-right: 3px;
     }
@@ -246,7 +322,7 @@
       margin-bottom: 1px;
     }
 
-    .node-row:hover { background: rgba(0,0,0,0.04); }
+    .node-row:hover { background: var(--hover-bg); }
 
     .node-row.selected {
       background: var(--selected-bg) !important;
@@ -263,7 +339,7 @@
       align-items: center;
       justify-content: center;
       font-size: 9px;
-      color: #7a6a55;
+      color: var(--toggle-fg);
       background: none;
       border: none;
       cursor: pointer;
@@ -274,7 +350,7 @@
       transition: background 0.1s, color 0.1s;
     }
 
-    .toggle-btn:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+    .toggle-btn:hover { background: var(--hover-bg-strong); color: var(--text); }
 
     .toggle-btn.leaf { cursor: default; color: transparent; pointer-events: none; }
 
@@ -285,7 +361,7 @@
 
     .node-id {
       font-size: 11px;
-      color: #7a5c32;
+      color: var(--node-id);
       font-weight: 600;
       letter-spacing: 0.04em;
       margin-right: 5px;
@@ -329,7 +405,7 @@
       background: none;
       border: 1px solid transparent;
       cursor: pointer;
-      color: #7d5e36;
+      color: var(--crumb-muted);
       font-size: 13px;
       line-height: 1;
       padding: 2px 7px;
@@ -340,8 +416,8 @@
       align-items: center;
       gap: 4px;
     }
-    .copy-path-btn:hover { opacity: 1; background: #fce8cc; border-color: #e8c898; }
-    .copy-path-btn.copied { opacity: 1; color: #5a8a3a; border-color: #9ac87a; background: #f0f8e8; }
+    .copy-path-btn:hover { opacity: 1; background: var(--crumb-hover-bg); border-color: var(--crumb-hover-border); }
+    .copy-path-btn.copied { opacity: 1; color: var(--copied-fg); border-color: var(--copied-border); background: var(--copied-bg); }
 
     /* ── Copy path button (tree node) ───────────── */
     .node-copy-btn {
@@ -349,7 +425,7 @@
       background: none;
       border: none;
       cursor: pointer;
-      color: #7d5e36;
+      color: var(--crumb-muted);
       font-size: 11px;
       padding: 0 5px;
       height: 20px;
@@ -363,8 +439,8 @@
       transition: opacity 0.15s, background 0.15s, color 0.15s;
     }
     .node-row:hover .node-copy-btn { opacity: 0.5; }
-    .node-copy-btn:hover { opacity: 1 !important; background: rgba(0,0,0,0.07); }
-    .node-copy-btn.copied { opacity: 1 !important; color: #5a8a3a; }
+    .node-copy-btn:hover { opacity: 1 !important; background: var(--hover-bg-strong); }
+    .node-copy-btn.copied { opacity: 1 !important; color: var(--copied-fg); }
 
     /* ── Print button (tree node) ───────────────── */
     .node-print-btn {
@@ -372,7 +448,7 @@
       background: none;
       border: none;
       cursor: pointer;
-      color: #7d5e36;
+      color: var(--crumb-muted);
       font-size: 11px;
       padding: 0 5px;
       height: 20px;
@@ -385,7 +461,7 @@
       transition: opacity 0.15s, background 0.15s;
     }
     .node-row:hover .node-print-btn { opacity: 0.5; }
-    .node-print-btn:hover { opacity: 1 !important; background: rgba(0,0,0,0.07); }
+    .node-print-btn:hover { opacity: 1 !important; background: var(--hover-bg-strong); }
 
     /* ── Copy toast ─────────────────────────────── */
     .copy-toast {
@@ -393,8 +469,8 @@
       bottom: 28px;
       left: 50%;
       transform: translateX(-50%) translateY(10px);
-      background: #2e1e0e;
-      color: #f5e8d0;
+      background: var(--toast-bg);
+      color: var(--toast-fg);
       padding: 7px 18px;
       border-radius: 20px;
       font-size: 12px;
@@ -417,7 +493,7 @@
       padding: 4px 9px;
       border: 1px solid var(--border);
       border-radius: 5px;
-      background: white;
+      background: var(--surface);
       font-size: 12px;
       cursor: pointer;
       color: var(--text-muted);
@@ -436,7 +512,7 @@
 
     .lang-btn.active {
       background: var(--controls-bg);
-      border-color: #c0a880;
+      border-color: var(--btn-hover-border);
       color: var(--text);
       opacity: 1;
     }
@@ -471,30 +547,20 @@
     /* ── Children container ─────────────────────────── */
     .children-wrap {
       padding-left: 22px;
-      border-left: 1px dashed #ddd0b8;
+      border-left: 1px dashed var(--tree-line);
       margin-left: 10px;
       overflow: hidden;
     }
 
     .children-wrap.collapsed { display: none; }
 
-    /* ── Depth left-border colors ───────────────────── */
-    .depth-0 > .node-row { border-left-color: #7c2d2d; }
-    .depth-1 > .node-row { border-left-color: #a04020; }
-    .depth-2 > .node-row { border-left-color: #c46a1a; }
-    .depth-3 > .node-row { border-left-color: #c49a0a; }
-    .depth-4 > .node-row { border-left-color: #7a9020; }
-    .depth-5 > .node-row { border-left-color: #2a7a50; }
-    .depth-6 > .node-row { border-left-color: #1a6888; }
-    .depth-7 > .node-row { border-left-color: #2a4a9a; }
-    .depth-8 > .node-row { border-left-color: #5a2a9a; }
-    .depth-9 > .node-row { border-left-color: #8a1a7a; }
-    .depth-10 > .node-row { border-left-color: #aa1a4a; }
-    .depth-11 > .node-row { border-left-color: #7c2d2d; }
+    /* Depth left-border colors are set inline per row from the --depth-N
+       custom properties (see depthColor in the script), so they follow the
+       active theme automatically. */
 
     /* ── Search highlight ───────────────────────────── */
     mark {
-      background: #ffe082;
+      background: var(--mark-bg);
       color: inherit;
       border-radius: 2px;
       padding: 0 1px;
@@ -506,8 +572,8 @@
     /* ── Node count badge ───────────────────────────── */
     .child-count {
       font-size: 11px;
-      color: #6f5430;
-      background: #f0e8d8;
+      color: var(--badge-fg);
+      background: var(--badge-bg);
       border-radius: 8px;
       padding: 0 5px;
       margin-left: 4px;
@@ -520,7 +586,7 @@
       margin: 0;
       padding: 16px 22px;
       border-bottom: 1px solid var(--border);
-      background: #fffdf8;
+      background: var(--surface-alt);
     }
 
     /* Constrain the text measure without cutting the section background short */
@@ -565,6 +631,24 @@
     .intro-body .text-title {
       font-weight: 600;
       color: var(--text);
+    }
+
+    .intro-toggles { display: flex; gap: 18px; flex-wrap: wrap; }
+
+    .howto-list { list-style: none; }
+    .howto-list li { margin-bottom: 7px; }
+    .howto-list strong { color: var(--text); }
+
+    .intro-body kbd {
+      font-family: inherit;
+      font-size: 11px;
+      background: var(--badge-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      padding: 0 5px;
+      white-space: nowrap;
     }
 
     /* ── Focus visibility ───────────────────────────── */
@@ -654,8 +738,33 @@
 
       /* Force color/border output */
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* ── Subtree-scoped printing (print-from-node) ──
+         Hide everything, then re-show the ancestor chain (as invisible
+         wrappers with no indent) and the target node's subtree. The path
+         context appears in the print header breadcrumb instead. */
+      body.print-from-node .tree-container .tree-node { display: none; }
+      body.print-from-node .tree-node.print-ancestor { display: block; }
+      body.print-from-node .tree-node.print-ancestor > .node-row { display: none; }
+      body.print-from-node .tree-node.print-ancestor > .children-wrap {
+        padding-left: 0 !important;
+        margin-left: 0 !important;
+        border-left: none !important;
+      }
+      body.print-from-node .tree-node.print-target,
+      body.print-from-node .tree-node.print-target .tree-node { display: block; }
     }
   </style>
+  <script>
+    // Apply the saved (or OS-preferred) theme before first paint to avoid a flash
+    try {
+      var savedTheme = localStorage.getItem('sabche-theme');
+      if (savedTheme === 'dark' ||
+          (savedTheme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('theme-dark');
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
 
@@ -667,7 +776,7 @@
 
 <div class="app-header">
   <div class="header-label">Sa bche Explorer · Yonten Dzo</div>
-  <span class="header-tib">ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ</span>
+  <span class="header-tib" lang="bo">ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ</span>
   <span class="header-en">Wisdom Chapter — Exposition of Prajñāpāramitā</span>
 </div>
 
@@ -676,16 +785,17 @@
     <span class="search-icon"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
     <input class="search-box" id="searchBox" type="text"
       placeholder="Search (diacritics optional)…"
+      aria-label="Search the outline"
       autocomplete="off" spellcheck="false">
     <button class="search-clear" id="searchClear" title="Clear search">✕</button>
   </div>
-  <span class="search-count" id="searchCount"></span>
+  <span class="search-count" id="searchCount" aria-live="polite"></span>
   <div class="divider"></div>
   <button class="btn" id="btnExpandAll">Expand All</button>
   <button class="btn" id="btnCollapseAll">Collapse All</button>
   <div class="divider"></div>
   <div class="lang-toggles">
-    <button class="lang-btn tib-btn active" id="btnTib" title="Toggle Tibetan">བོད་ཡིག</button>
+    <button class="lang-btn tib-btn active" id="btnTib" title="Toggle Tibetan" lang="bo">བོད་ཡིག</button>
     <button class="lang-btn active" id="btnEng" title="Toggle English">ENG</button>
   </div>
   <div class="divider"></div>
@@ -693,6 +803,8 @@
     <button class="btn size-btn" id="btnSizeDown" title="Decrease text size">−</button>
     <button class="btn size-btn" id="btnSizeUp" title="Increase text size">+</button>
   </div>
+  <div class="divider"></div>
+  <button class="btn size-btn" id="btnTheme" title="Switch to night mode" aria-label="Switch to night mode"></button>
   <div class="divider"></div>
   <button class="btn print-btn" id="btnPrint" title="Print / Save as PDF">
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -711,35 +823,80 @@
 
 <div class="intro-section">
   <div class="intro-inner">
-  <button class="intro-toggle" id="introToggle">
-    <span class="intro-arrow" id="introArrow">▶</span> About this text
-  </button>
+  <div class="intro-toggles">
+    <button class="intro-toggle" id="introToggle" aria-expanded="false" aria-controls="introBody">
+      <span class="intro-arrow">▶</span> About this text
+    </button>
+    <button class="intro-toggle" id="howtoToggle" aria-expanded="false" aria-controls="howtoBody">
+      <span class="intro-arrow">▶</span> How to use
+    </button>
+  </div>
   <div class="intro-body" id="introBody">
     <p>
-      <span class="text-title">ཡོན་ཏན་མཛོད · Yönten Dzö</span> (<em>Treasury of Precious Qualities</em>)
+      <span class="text-title" lang="bo">ཡོན་ཏན་མཛོད</span> <span class="text-title">· Yönten Dzö</span> (<em>Treasury of Precious Qualities</em>)
       by Jigme Lingpa (1730–1798) is a comprehensive overview of the entire Buddhist path
       according to the Nyingma tradition. This explorer covers the
-      <strong>Wisdom Chapter</strong> (ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ), the exposition of Prajñāpāramitā —
-      the sixth and final of the Six Perfections (ཕར་ཕྱིན་དྲུག).
+      <strong>Wisdom Chapter</strong> (<span lang="bo">ཤེས་རབ་ཀྱི་ཕ་རོལ་ཏུ་ཕྱིན་པ་བཤད་པ</span>), the exposition of Prajñāpāramitā —
+      the sixth and final of the Six Perfections (<span lang="bo">ཕར་ཕྱིན་དྲུག</span>).
     </p>
     <p>
       The chapter unfolds in three major divisions corresponding to the three types of Prajñā:
-      <strong>hearing</strong> (ཐོས་པ), <strong>reflection</strong> (བསམ་པ), and <strong>meditation</strong> (སྒོམ་པ).
+      <strong>hearing</strong> (<span lang="bo">ཐོས་པ</span>), <strong>reflection</strong> (<span lang="bo">བསམ་པ</span>), and <strong>meditation</strong> (<span lang="bo">སྒོམ་པ</span>).
       The hearing section is the most extensive, covering the hermeneutical tools for interpreting scripture,
       the objects of knowledge, and a detailed survey of the four philosophical schools
       culminating in the Prāsaṅgika Madhyamaka view.
     </p>
     <p>
-      This <em>sa bche</em> (outline) follows the structure of the root text and its auto-commentary.
-      Use the search bar to find topics across Tibetan and English — diacritics are optional
-      (e.g., "prajna" will find "Prajñā"). Click any node to see its position in the breadcrumb trail.
+      This <em>sa bche</em> (outline) follows the structure of the root text and its
+      auto-commentary. Open <strong>How to use</strong> for a tour of the controls.
     </p>
+  </div>
+  <div class="intro-body" id="howtoBody">
+    <ul class="howto-list">
+      <li>
+        <strong>Browse the outline.</strong> Click the ▶ arrow to expand or collapse a section —
+        the small number badge shows how many subsections it contains.
+        <em>Expand All</em> / <em>Collapse All</em> in the toolbar open or close everything at once.
+      </li>
+      <li>
+        <strong>Mark your place.</strong> Click any row to select it. Its full path appears in the
+        breadcrumb bar above the outline; click any step of the path to jump there.
+        Press <kbd>Esc</kbd> to clear the selection.
+      </li>
+      <li>
+        <strong>Search.</strong> The search box matches Tibetan, English, and section numbers
+        (e.g. <em>2.1.2</em>). Diacritics are optional — “prajna” finds “Prajñā”. Matches are
+        highlighted and shown together with their parent headings for context.
+        <kbd>Ctrl</kbd>+<kbd>F</kbd> (<kbd>⌘</kbd>+<kbd>F</kbd> on Mac) jumps to the search box;
+        <kbd>Esc</kbd> clears it.
+      </li>
+      <li>
+        <strong>Languages &amp; text size.</strong> <span lang="bo">བོད་ཡིག</span> and <em>ENG</em>
+        toggle the Tibetan and English lines (at least one always stays on).
+        <em>−</em> / <em>+</em> adjust the text size.
+      </li>
+      <li>
+        <strong>Day &amp; night mode.</strong> The sun/moon button switches between light and dark
+        themes. Your choice is remembered; until you pick one, the app follows your system setting.
+      </li>
+      <li>
+        <strong>Copy a path.</strong> Hover over a row and click its copy icon — or use
+        <em>Copy path</em> in the breadcrumb bar — to copy the full path to the clipboard.
+      </li>
+      <li>
+        <strong>Print or save as PDF.</strong> The toolbar <em>Print</em> button prints the outline
+        exactly as currently expanded. To print a single branch, hover over its row and click the
+        print icon (or use the print button in the breadcrumb bar) — the printout is scoped to that
+        branch, with its path shown in the page header. Choose “Save as PDF” in the print dialog to
+        export a PDF.
+      </li>
+    </ul>
   </div>
   </div>
 </div>
 
 <div class="tree-container" id="treeContainer"></div>
-<div class="copy-toast" id="copyToast"></div>
+<div class="copy-toast" id="copyToast" role="status"></div>
 
 <script>
 // ═══════════════════════════════════════════════
@@ -1062,7 +1219,8 @@ const state = {
   query: '',
   showTib: true,
   showEn: true,
-  textSize: 0   // steps; each step ±2px; range -2..+4
+  textSize: 0,  // steps; each step ±2px; range -2..+4
+  theme: 'auto' // 'auto' | 'light' | 'dark'; resolved in the theme section below
 };
 
 // Default: expand depth 0 and 1
@@ -1073,14 +1231,10 @@ Object.values(nodeIndex).forEach(({ node, depth }) => {
 // ═══════════════════════════════════════════════
 //  DEPTH COLORS
 // ═══════════════════════════════════════════════
-const DEPTH_COLORS = [
-  '#7c2d2d','#a04020','#c46a1a','#c49a0a',
-  '#7a9020','#2a7a50','#1a6888','#2a4a9a',
-  '#5a2a9a','#8a1a7a','#aa1a4a','#7c2d2d'
-];
-
+// Values live in the --depth-N custom properties (with dark-theme
+// overrides); the deepest nodes reuse the last defined color.
 function depthColor(d) {
-  return DEPTH_COLORS[Math.min(d, DEPTH_COLORS.length - 1)];
+  return `var(--depth-${Math.min(d, 11)})`;
 }
 
 // ═══════════════════════════════════════════════
@@ -1095,6 +1249,7 @@ function stripDiacritics(s) {
 function getMatchingIds(q) {
   if (!q) return null;
   const lq = stripDiacritics(q.toLowerCase());
+  if (!lq) return null; // query was only combining marks — treat as no filter
   const matches = new Set();
   const visible = new Set(); // matches + all their ancestors
 
@@ -1126,6 +1281,9 @@ function highlight(text, q) {
   // Find matches in the stripped version, then map positions back to original
   const strippedText = stripDiacritics(text);
   const strippedQ = stripDiacritics(q);
+  // A query of only combining marks strips to '' — an empty regex would
+  // match zero-length at every position and never advance (infinite loop)
+  if (!strippedQ) return escHtml(text);
   const escapedQ = strippedQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(escapedQ, 'gi');
 
@@ -1185,7 +1343,7 @@ function highlight(text, q) {
 }
 
 function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ═══════════════════════════════════════════════
@@ -1212,7 +1370,6 @@ function renderTree() {
 }
 
 function renderNode(node, depth, searchResult) {
-  const { node: n } = nodeIndex[node.id] || {};
   const actualDepth = nodeIndex[node.id] ? nodeIndex[node.id].depth : depth;
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = state.expanded.has(node.id);
@@ -1240,16 +1397,22 @@ function renderNode(node, depth, searchResult) {
   // Toggle button
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'toggle-btn' + (hasChildren ? '' : ' leaf');
-  toggleBtn.setAttribute('aria-label', isExpanded ? 'Collapse' : 'Expand');
   if (hasChildren) {
+    toggleBtn.setAttribute('aria-label', isExpanded ? 'Collapse' : 'Expand');
+    toggleBtn.setAttribute('aria-expanded', String(isExpanded || !!searchResult));
     const arrow = document.createElement('span');
-    arrow.className = 'toggle-arrow' + (isExpanded ? ' open' : '');
+    // Children are force-expanded while a search is active — reflect that
+    arrow.className = 'toggle-arrow' + (isExpanded || searchResult ? ' open' : '');
     arrow.textContent = '▶';
     toggleBtn.appendChild(arrow);
     toggleBtn.addEventListener('click', e => {
       e.stopPropagation();
       toggleExpand(node.id);
     });
+  } else {
+    // Leaf spacer: keep it out of the tab order and away from screen readers
+    toggleBtn.tabIndex = -1;
+    toggleBtn.setAttribute('aria-hidden', 'true');
   }
 
   // Node content
@@ -1263,6 +1426,7 @@ function renderNode(node, depth, searchResult) {
 
   const tibSpan = document.createElement('span');
   tibSpan.className = 'node-tib';
+  tibSpan.lang = 'bo';
   tibSpan.innerHTML = highlight(node.tib, q);
 
   const enSpan = document.createElement('span');
@@ -1379,20 +1543,43 @@ function buildPathText(id) {
 }
 
 let _copyToastTimer = null;
+function showToast(msg) {
+  const toast = document.getElementById('copyToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(_copyToastTimer);
+  _copyToastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+function writeClipboard(text) {
+  // navigator.clipboard only exists in secure contexts (https, localhost)
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) {}
+    ta.remove();
+    ok ? resolve() : reject(new Error('copy command failed'));
+  });
+}
+
 function copyPath(id, triggerEl) {
-  const text = buildPathText(id);
-  navigator.clipboard.writeText(text).then(() => {
-    // Button feedback
+  writeClipboard(buildPathText(id)).then(() => {
     if (triggerEl) {
       triggerEl.classList.add('copied');
       setTimeout(() => triggerEl.classList.remove('copied'), 1500);
     }
-    // Toast
-    const toast = document.getElementById('copyToast');
-    toast.textContent = 'Path copied';
-    toast.classList.add('show');
-    clearTimeout(_copyToastTimer);
-    _copyToastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    showToast('Path copied');
+  }).catch(() => {
+    showToast('Copy failed — clipboard access was blocked');
   });
 }
 
@@ -1409,7 +1596,7 @@ function updateBreadcrumb() {
   bc.innerHTML = path.map((node, i) => {
     const isLast = i === path.length - 1;
     return `<button type="button" class="crumb" data-crumb-id="${escHtml(node.id)}" title="${escHtml(node.en)}">
-      <span class="crumb-top"><span class="crumb-id">${escHtml(node.id)}</span><span class="crumb-tib">${escHtml(node.tib)}</span></span>
+      <span class="crumb-top"><span class="crumb-id">${escHtml(node.id)}</span><span class="crumb-tib" lang="bo">${escHtml(node.tib)}</span></span>
       <span class="crumb-en">${escHtml(node.en)}</span>
     </button>${isLast ? '' : '<span class="crumb-sep">›</span>'}`;
   }).join('');
@@ -1469,11 +1656,13 @@ function applyTextSize() {
 }
 
 document.getElementById('btnTib').addEventListener('click', () => {
+  if (state.showTib && !state.showEn) return; // keep at least one language visible
   state.showTib = !state.showTib;
   applyLangFilter();
 });
 
 document.getElementById('btnEng').addEventListener('click', () => {
+  if (state.showEn && !state.showTib) return; // keep at least one language visible
   state.showEn = !state.showEn;
   applyLangFilter();
 });
@@ -1485,6 +1674,46 @@ document.getElementById('btnSizeDown').addEventListener('click', () => {
 document.getElementById('btnSizeUp').addEventListener('click', () => {
   if (state.textSize < 4) { state.textSize++; applyTextSize(); }
 });
+
+// ═══════════════════════════════════════════════
+//  DAY / NIGHT MODE
+// ═══════════════════════════════════════════════
+const THEME_KEY = 'sabche-theme';
+const MOON_ICON = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+const SUN_ICON = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v1.8M8 12.7v1.8M14.5 8h-1.8M3.3 8H1.5M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3M12.6 12.6l-1.3-1.3M4.7 4.7 3.4 3.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+try {
+  const storedTheme = localStorage.getItem(THEME_KEY);
+  if (storedTheme === 'light' || storedTheme === 'dark') state.theme = storedTheme;
+} catch (e) { /* storage unavailable — stay on 'auto' */ }
+
+function isDarkTheme() {
+  return state.theme === 'dark' || (state.theme === 'auto' && darkScheme.matches);
+}
+
+function applyTheme() {
+  const dark = isDarkTheme();
+  document.documentElement.classList.toggle('theme-dark', dark);
+  const btn = document.getElementById('btnTheme');
+  btn.innerHTML = dark ? SUN_ICON : MOON_ICON;
+  const label = dark ? 'Switch to day mode' : 'Switch to night mode';
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+}
+
+document.getElementById('btnTheme').addEventListener('click', () => {
+  state.theme = isDarkTheme() ? 'light' : 'dark';
+  try { localStorage.setItem(THEME_KEY, state.theme); } catch (e) {}
+  applyTheme();
+});
+
+// Follow the OS setting live until the user makes an explicit choice
+if (darkScheme.addEventListener) {
+  darkScheme.addEventListener('change', () => {
+    if (state.theme === 'auto') applyTheme();
+  });
+}
 
 // ═══════════════════════════════════════════════
 //  SEARCH
@@ -1518,8 +1747,12 @@ document.getElementById('btnCollapseAll').addEventListener('click', collapseAll)
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (state.query) {
-      document.getElementById('searchBox').value = '';
+    const box = document.getElementById('searchBox');
+    // Check the box's live value too: a just-typed query may still be
+    // sitting in the debounce timer without having reached state.query
+    if (state.query || box.value) {
+      clearTimeout(searchTimer);
+      box.value = '';
       state.query = '';
       document.getElementById('searchClear').classList.remove('visible');
       renderTree();
@@ -1536,13 +1769,16 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══════════════════════════════════════════════
-//  INTRO TOGGLE
+//  INTRO / HOW-TO TOGGLES
 // ═══════════════════════════════════════════════
-document.getElementById('introToggle').addEventListener('click', () => {
-  const body = document.getElementById('introBody');
-  const arrow = document.getElementById('introArrow');
-  const isOpen = body.classList.toggle('visible');
-  arrow.classList.toggle('open', isOpen);
+[['introToggle', 'introBody'], ['howtoToggle', 'howtoBody']].forEach(([btnId, bodyId]) => {
+  const btn = document.getElementById(btnId);
+  const body = document.getElementById(bodyId);
+  btn.addEventListener('click', () => {
+    const isOpen = body.classList.toggle('visible');
+    btn.querySelector('.intro-arrow').classList.toggle('open', isOpen);
+    btn.setAttribute('aria-expanded', String(isOpen));
+  });
 });
 
 // ═══════════════════════════════════════════════
@@ -1555,6 +1791,7 @@ function preparePrintHeader() {
   if (state.showTib) {
     const t = document.createElement('span');
     t.className = 'print-title-tib';
+    t.lang = 'bo';
     t.textContent = DATA.title_tib;
     titleEl.appendChild(t);
   }
@@ -1580,9 +1817,10 @@ function preparePrintHeader() {
 function printTree(fromNodeId) {
   const prevSelected = state.selected;
   const prevExpanded = new Set(state.expanded);
+  const scoped = fromNodeId != null;
 
-  if (fromNodeId != null && fromNodeId !== state.selected) {
-    // Expand all ancestors so the target node is visible in the DOM
+  if (scoped) {
+    // Expand the node and its ancestors so the target subtree is in the DOM
     let cur = nodeIndex[fromNodeId];
     while (cur) {
       state.expanded.add(cur.node.id);
@@ -1591,18 +1829,36 @@ function printTree(fromNodeId) {
     state.selected = fromNodeId;
     renderTree();
     updateBreadcrumb();
+
+    // Scope the printout to the target's subtree (see the print-from-node
+    // rules in the print stylesheet); ancestors appear in the header path
+    document.body.classList.add('print-from-node');
+    const targetEl = document.querySelector(`[data-id="${CSS.escape(fromNodeId)}"]`);
+    if (targetEl) targetEl.classList.add('print-target');
+    let pid = nodeIndex[fromNodeId] ? nodeIndex[fromNodeId].parentId : null;
+    while (pid) {
+      const ancestorEl = document.querySelector(`[data-id="${CSS.escape(pid)}"]`);
+      if (ancestorEl) ancestorEl.classList.add('print-ancestor');
+      pid = nodeIndex[pid] ? nodeIndex[pid].parentId : null;
+    }
   }
 
   preparePrintHeader();
-  window.print(); // synchronous on desktop — blocks until dialog is dismissed
 
-  // Restore previous state after print dialog closes
-  if (fromNodeId != null && fromNodeId !== prevSelected) {
+  // Restore on afterprint rather than after window.print() returns:
+  // print() blocks until the dialog closes on desktop, but returns
+  // immediately on mobile browsers — restoring synchronously there would
+  // change the page before its print snapshot is taken
+  const restore = () => {
+    if (!scoped) return;
+    document.body.classList.remove('print-from-node');
     state.selected = prevSelected;
     state.expanded = prevExpanded;
     renderTree();
     updateBreadcrumb();
-  }
+  };
+  window.addEventListener('afterprint', restore, { once: true });
+  window.print();
 }
 
 document.getElementById('btnPrint').addEventListener('click', () => printTree());
@@ -1614,6 +1870,7 @@ renderTree();
 updateBreadcrumb();
 applyLangFilter();
 applyTextSize();
+applyTheme();
 </script>
 </body>
 </html>
